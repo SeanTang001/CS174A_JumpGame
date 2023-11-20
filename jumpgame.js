@@ -14,8 +14,9 @@ class Player {
         this.vel = vec3(0,0,0);
         this.shape = new defs.Cube();
         this.material = new Material(new defs.Phong_Shader(),
-                                     {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")});
+            {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")});
         this.falling = false;
+        this.time=0;
     }
 
     draw(context, program_state) {
@@ -24,9 +25,13 @@ class Player {
     }
 
     // v is the vector to direct the jump
-    jump(v) {
+    jump(done) {
         if (this.falling) return;
-        this.vel = this.vel.plus(v);
+        this.time++;
+        if(!done) return;
+        this.vel = this.vel.plus(vec3(Math.min(2,1.15*this.time/4),Math.min(3,2*this.time/4),0));
+        this.time=0;
+
         this.falling = true;
     }
 
@@ -53,7 +58,7 @@ class Tree {
         this.height = height;
         this.shape = new defs.Capped_Cylinder(30, 30);
         this.material = new Material(new defs.Phong_Shader(),
-                                     {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")});
+            {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")});
     }
 
     draw(context, program_state) {
@@ -91,6 +96,10 @@ export class JumpGame extends Scene {
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
+        this.gameOver=false;
+
+        this.onBlock=false;
+
         // Game initialization
         this.player = new Player(vec3(0,1,0));
         this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
@@ -107,10 +116,13 @@ export class JumpGame extends Scene {
         this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
         this.new_line();
         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);*/
-        this.key_triggered_button("Jump", ["j"], () => this.player.jump(vec3(1.15,2,0)));
+        this.key_triggered_button("Jump(distance proportional to duration of key press" +
+            "", ["j"], () => this.player.jump(false),
+            "hi", () => this.player.jump(true));
     }
 
     display(context, program_state) {
+
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
@@ -144,8 +156,28 @@ export class JumpGame extends Scene {
         for (let tree of this.trees)
             tree.draw(context, program_state);
 
+        if(this.gameOver) {
+            this.player.draw(context, program_state);
+            return;
+        }
+
         this.player.update();
-        if (this.player.pos[1] < 1) this.player.land(1);
+        //if y coord<=1(height of blocks), then check if above a block, if yes stop, if not keep going
+        //if not above a block fail end game
+
+        if (this.player.pos[1] <= 1) { //simply check if x-coord falls within that range
+            this.onBlock=false;
+            for (let tree of this.trees)
+                if(tree.pos[0]-1<=this.player.pos[0]&&tree.pos[0]+1>=this.player.pos[0]){
+                    this.onBlock=true;
+                }
+            if(this.onBlock==true) {
+                this.player.land(1);
+            }
+        }
+        if(this.player.pos[1]<=0){
+            this.gameOver=true;
+        }
         this.player.draw(context, program_state);
     }
 }
