@@ -56,13 +56,13 @@ class Tree {
         this.shape = new defs.Capped_Cylinder(30, 30);
 
         this.material_gouraud = new Material(new Gouraud_Shader(),
-        {ambient: 0, diffusivity: .5, specularity: 1, color: hex_color("#80FFFF")});
+        {ambient: 0, diffusivity: .8, specularity: 1, color: hex_color("#80FFFF")});
 
         this.material_phong = new Material(new defs.Phong_Shader(),
-        {ambient: 0, diffusivity: .5, specularity: 1, color: hex_color("#80FFFF")});
+        {ambient: 0, diffusivity: .8, specularity: 1, color: hex_color("#80FFFF")});
 
         this.material_phong_shading = new Material(new defs.Phong_Shader(),
-        {ambient: 0, diffusivity: .3, specularity: 1, color: hex_color("#80FFFF")});
+        {ambient: 0, diffusivity: .6, specularity: 1, color: hex_color("#80FFFF")});
 
     }
 
@@ -115,8 +115,30 @@ export class JumpGame extends Scene {
 
     set_colors() {
         // set color function
-        for (var i = 0; i < 8; i++) {
-            this.colors[i] = color(Math.random(), Math.random(), Math.random(), 1.0);
+        // for (var i = 0; i < 8; i++) {
+        //     this.colors[i] = color(Math.random(), Math.random(), Math.random(), 1.0);
+        // }
+
+// Generate start_color with a broader range
+const start_color = color(0.5 - Math.random() * 0.5, 0.5 - Math.random() * 0.5, 0.5 - Math.random() * 0.5, 1.0);
+console.log(start_color);
+
+// Generate end_color with a broader range
+const end_color = color( 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 1.0);
+console.log(end_color);
+
+        for (let i = 0; i < 6; i++) {
+            const t = i / (6 - 1); // Calculate a ratio between 0 and 1
+    
+            // Interpolate between start_color and end_color based on the ratio 't'
+            const new_color = color(
+                start_color[0] * (1 - t) + end_color[0] * t,
+                start_color[1] * (1 - t) + end_color[1] * t,
+                start_color[2] * (1 - t) + end_color[2] * t,
+                1.0
+            );
+    
+            this.colors[i] = new_color;
         }
     }
 
@@ -184,7 +206,6 @@ export class JumpGame extends Scene {
 // Gouraud Shader 
 class Gouraud_Shader extends Shader {
     // This is a Shader using Phong_Shader as template
-    // TODO: Modify the glsl coder here to create a Gouraud Shader (Planet 2)
 
     constructor(num_lights = 2) {
         super();
