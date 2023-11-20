@@ -52,7 +52,7 @@ class Player {
 }
 
 class Tree {
-    // "pos" is the location of the center of the bottom face of the tree
+    // "pos" is the location of the center of the bottom face of the Tree
     constructor(pos, radius, height) {
         this.pos = pos;
         this.radius = radius;
@@ -82,6 +82,76 @@ class Tree {
             else
                 this.shape.draw(context, program_state, tree_transform, this.material_phong.override({color:color}));
         }
+    }
+}
+
+class TreeShape extends Shape {
+    constructor() {
+        super("position", "normal");
+
+        this.arrays.position.push(...Vector3.cast(
+            [1,0,0],//0
+            [0,0,-1],//1
+            [0,2,0],//4
+            [-1,0,0],//2
+            [0,0,1],//3
+            [0,0,-1],//1
+            [1,0,0],//0
+            [0,2,0],//4
+            [0,0,1],//3
+            ));
+        this.arrays.normal.push(...Vector3.cast(
+            [1,0,0],
+            [0,0,-1],
+            [-1,0,0]
+            [0,0,1],
+            [0,1,0]
+        ));
+        // this.indices.push(0,1,4,2,3,1,0,4,3);
+    }
+}
+
+class TreeBackground {
+    constructor(pos, radius, height) {
+        this.pos = pos;
+        this.radius = radius;
+        this.height = height;
+        this.shapes = {
+            cone1: new defs.Closed_Cone(30,30),
+            cone2: new defs.Closed_Cone(30,30),
+            cone3: new defs.Closed_Cone(30,30),
+            cone4: new defs.Closed_Cone(30,30),
+            stump: new defs.Capped_Cylinder(30, 30),
+        }
+
+        this.material = new Material(new defs.Phong_Shader(),
+        {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")});
+    }
+
+    draw(context, program_state, t, color, shading) {
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0).times(Mat4.rotation(Math.PI/2,1,0,0)));
+        tree_transform.pre_multiply(Mat4.translation(...this.pos));
+        //let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0).times(Mat4.translation(...this.pos).times(Mat4.rotation(Math.PI/2,1,0,0))));
+        this.shapes.stump.draw(context, program_state, tree_transform, this.material);
+
+        tree_transform.times(Mat4.rotation(Math.PI/2, 1,0,0))
+
+        tree_transform.times(Mat4.translation(0, this.height, 0));
+
+        this.shapes.cone1.draw(context, program_state, tree_transform, this.material);
+
+        tree_transform.times(Mat4.translation(0,this.height,0));
+
+        this.shapes.cone2.draw(context, program_state, tree_transform, this.material);
+
+        tree_transform.times(Mat4.translation(0,this.height,0));
+
+        this.shapes.cone3.draw(context, program_state, tree_transform, this.material);
+
+        tree_transform.times(Mat4.translation(0,this.height*5,0));
+
+        this.shapes.cone3.draw(context, program_state, tree_transform, this.material);
+
     }
 }
 
@@ -119,6 +189,7 @@ export class JumpGame extends Scene {
         // Game initialization
         this.player = new Player(vec3(0,1,0));
         this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
+        this.tree_background = new TreeBackground(vec3(0,3,0),1,1);
         this.set_colors();
     }
 
@@ -128,13 +199,13 @@ export class JumpGame extends Scene {
         //     this.colors[i] = color(Math.random(), Math.random(), Math.random(), 1.0);
         // }
 
-// Generate start_color with a broader range
-const start_color = color(0.5 - Math.random() * 0.5, 0.5 - Math.random() * 0.5, 0.5 - Math.random() * 0.5, 1.0);
-console.log(start_color);
+        // Generate start_color with a broader range
+        const start_color = color(0.5 - Math.random() * 0.5, 0.5 - Math.random() * 0.5, 0.5 - Math.random() * 0.5, 1.0);
+        console.log(start_color);
 
-// Generate end_color with a broader range
-const end_color = color( 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 1.0);
-console.log(end_color);
+        // Generate end_color with a broader range
+        const end_color = color( 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 1.0);
+        console.log(end_color);
 
         for (let i = 0; i < 6; i++) {
             const t = i / (6 - 1); // Calculate a ratio between 0 and 1
@@ -229,9 +300,9 @@ console.log(end_color);
             this.gameOver=true;
         }
         this.player.draw(context, program_state);
+        this.tree_background.draw(context, program_state)
     }
 }
-
 
 // Gouraud Shader 
 class Gouraud_Shader extends Shader {
