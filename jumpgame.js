@@ -2,7 +2,7 @@ import {defs, tiny} from './examples/common.js';
 import {Shape_From_File} from './examples/obj-file-demo.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
 
 let TIMESTEP = 0.25;
@@ -99,7 +99,7 @@ class TreeBackground{
 
       // Non bump mapped:
       this.tree = new Material(new defs.Phong_Shader(), {
-          color: color(.5, .5, .5, 1),
+          color: hex_color("#228B22"),
           ambient: .3, diffusivity: .5, specularity: .5,
       });
     }
@@ -124,10 +124,11 @@ class Floor{
       };
 
       // Non bump mapped:
-      this.floor = new Material(new defs.Phong_Shader(), {
-          color: color(.5, .5, .5, 1),
-          ambient: .3, diffusivity: .5, specularity: .5,
-      });
+      this.floor = new Material(new defs.Textured_Phong(), {
+        color: hex_color("#ffffff"),
+        ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
+        texture: new Texture("../assets/grass.png")
+        });
     }
 
     draw(context, program_state, t, color, shading) {
@@ -140,16 +141,8 @@ class Floor{
 export class JumpGame extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
-        super();
+        super();        tree: new Shape_From_File("../assets/objects/Lowpoly_tree_sample.obj")
 
-        // At the beginning of our program, load one of each of these shape definitions onto the GPU.
-        this.shapes = {
-            torus: new defs.Torus(15, 15),
-            torus2: new defs.Torus(3, 15),
-            sphere: new defs.Subdivision_Sphere(4), circle: new defs.Regular_2D_Polygon(1, 15),
-            // TODO:  Fill in as many additional shape instances as needed in this key/value table.
-            //        (Requirement 1)
-        };
 
         // Colors
         this.colors = [];
