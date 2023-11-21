@@ -1,7 +1,8 @@
 import {defs, tiny} from './examples/common.js';
+import {Shape_From_File} from './examples/obj-file-demo.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
 
 let TIMESTEP = 0.25;
@@ -52,7 +53,7 @@ class Player {
 }
 
 class Tree {
-    // "pos" is the location of the center of the bottom face of the tree
+    // "pos" is the location of the center of the bottom face of the Tree
     constructor(pos, radius, height) {
         this.pos = pos;
         this.radius = radius;
@@ -85,19 +86,63 @@ class Tree {
     }
 }
 
+class TreeBackground{
+    constructor(pos, radius, height) {
+        this.pos = pos;
+        this.radius = radius;
+        this.height = height;
+
+        // Load the model file:
+      this.shapes = {
+        tree: new Shape_From_File("../assets/objects/Lowpoly_tree_sample.obj")
+      };
+
+      // Non bump mapped:
+      this.tree = new Material(new defs.Phong_Shader(), {
+          color: hex_color("#228B22"),
+          ambient: .3, diffusivity: .5, specularity: .5,
+      });
+    }
+
+    draw(context, program_state, t, color, shading) {
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0));
+        tree_transform.pre_multiply(Mat4.translation(...this.pos));
+        this.shapes.tree.draw(context, program_state, tree_transform, this.tree);
+    }
+}
+
+
+class Floor{
+    constructor(pos, radius, height) {
+        this.pos = pos;
+        this.radius = radius;
+        this.height = height;
+
+        // Load the model file:
+      this.shapes = {
+        floor: new defs.Cube()
+      };
+
+      // Non bump mapped:
+      this.floor = new Material(new defs.Textured_Phong(), {
+        color: hex_color("#ffffff"),
+        ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
+        texture: new Texture("../assets/grass.png")
+        });
+    }
+
+    draw(context, program_state, t, color, shading) {
+        let transform = Mat4.scale(30,0.1,15);
+        transform.pre_multiply(Mat4.translation(...vec3(5,0,0)));
+        this.shapes.floor.draw(context, program_state, transform, this.floor);
+    }
+}
+
 export class JumpGame extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
-        super();
+        super();        tree: new Shape_From_File("../assets/objects/Lowpoly_tree_sample.obj")
 
-        // At the beginning of our program, load one of each of these shape definitions onto the GPU.
-        this.shapes = {
-            torus: new defs.Torus(15, 15),
-            torus2: new defs.Torus(3, 15),
-            sphere: new defs.Subdivision_Sphere(4), circle: new defs.Regular_2D_Polygon(1, 15),
-            // TODO:  Fill in as many additional shape instances as needed in this key/value table.
-            //        (Requirement 1)
-        };
 
         // Colors
         this.colors = [];
@@ -110,15 +155,26 @@ export class JumpGame extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
             ring: new Material(new defs.Phong_Shader()),
         }
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.gameOver=false;
 
         this.onBlock=false;
 
+        this.initial_camera_location = Mat4.look_at(vec3(-6, 14, 6), vec3(3, 3, 0), vec3(0, 1, 0));
         // Game initialization
         this.player = new Player(vec3(0,1,0));
         this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
+        this.tree_backgrounds = [
+            new TreeBackground(vec3(-5,5,-3),3,3), 
+            new TreeBackground(vec3(0,5,-3),3,3),
+            new TreeBackground(vec3(5,5,-3),3,3),
+            new TreeBackground(vec3(10,5,-3),3,3),          
+            new TreeBackground(vec3(-5,0,9),3,3), 
+            new TreeBackground(vec3(0,0,9),3,3),
+            new TreeBackground(vec3(5,0,9),3,3),
+            new TreeBackground(vec3(10,0,9),3,3),          
+        ];
+        this.floor = new Floor();
         this.set_colors();
     }
 
@@ -128,13 +184,13 @@ export class JumpGame extends Scene {
         //     this.colors[i] = color(Math.random(), Math.random(), Math.random(), 1.0);
         // }
 
-// Generate start_color with a broader range
-const start_color = color(0.5 - Math.random() * 0.5, 0.5 - Math.random() * 0.5, 0.5 - Math.random() * 0.5, 1.0);
-console.log(start_color);
+        // Generate start_color with a broader range
+        const start_color = color(0.5 - Math.random() * 0.5, 0.5 - Math.random() * 0.5, 0.5 - Math.random() * 0.5, 1.0);
+        console.log(start_color);
 
-// Generate end_color with a broader range
-const end_color = color( 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 1.0);
-console.log(end_color);
+        // Generate end_color with a broader range
+        const end_color = color( 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 1.0);
+        console.log(end_color);
 
         for (let i = 0; i < 6; i++) {
             const t = i / (6 - 1); // Calculate a ratio between 0 and 1
@@ -153,18 +209,9 @@ console.log(end_color);
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        /*this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => null);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-        this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
-        this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
-        this.new_line();
-        this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);*/
-        this.key_triggered_button("Jump(distance proportional to duration of key press" +
-            "", ["j"], () => this.player.jump(false),
+        this.key_triggered_button("Jump(distance proportional to duration of key press", ["j"], () => this.player.jump(false),
             "hi", () => this.player.jump(true));
+        this.key_triggered_button("Change Color", ["c"], () => {this.set_colors()});
     }
 
     display(context, program_state) {
@@ -210,6 +257,10 @@ console.log(end_color);
             this.player.draw(context, program_state);
             return;
         }
+        for (let i = 0; i < this.tree_backgrounds.length; i++){
+            this.tree_backgrounds[i].draw(context, program_state, t, this.colors[i], shading);
+        }
+        this.floor.draw(context, program_state);
 
         this.player.update();
         //if y coord<=1(height of blocks), then check if above a block, if yes stop, if not keep going
@@ -229,9 +280,9 @@ console.log(end_color);
             this.gameOver=true;
         }
         this.player.draw(context, program_state);
+
     }
 }
-
 
 // Gouraud Shader 
 class Gouraud_Shader extends Shader {
