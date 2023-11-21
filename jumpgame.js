@@ -27,6 +27,8 @@ class Player {
 
     // v is the vector to direct the jump
     jump(done) {
+
+
         if (this.falling) return;
         this.time++;
         if(!done) return;
@@ -135,6 +137,9 @@ class Floor{
         let transform = Mat4.scale(30,0.1,15);
         transform.pre_multiply(Mat4.translation(...vec3(5,0,0)));
         this.shapes.floor.draw(context, program_state, transform, this.floor);
+        //set to true after player jumps off this block
+        if(this.disappear==false)
+            this.shape.draw(context, program_state, tree_transform, this.material);
     }
 }
 
@@ -156,8 +161,12 @@ export class JumpGame extends Scene {
             ring: new Material(new defs.Phong_Shader()),
         }
 
+        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+
+        //true when player does not land on a block
         this.gameOver=false;
 
+        //true when you are on a block, hence stop movement
         this.onBlock=false;
 
         this.initial_camera_location = Mat4.look_at(vec3(-6, 14, 6), vec3(3, 3, 0), vec3(0, 1, 0));
@@ -205,6 +214,34 @@ export class JumpGame extends Scene {
     
             this.colors[i] = new_color;
         }
+
+        //add new trees as the game progresses
+        this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1),
+            new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
+
+        //x-coordinate of last tree
+        this.lastX=20;
+    }
+
+    update_tree(){
+        //this function called when player finally jumps(releases key)
+
+        //also create a new block
+
+        this.trees[this.trees.length]=(new Tree(vec3(this.lastX+5,0,0),1,1));
+        this.lastX+=5;
+
+        //disappear all the trees before the new one you land on
+
+        //set the blocks it has jumped after to disappear
+        for (let tree of this.trees) {
+            if (tree.pos[0] + tree.radius < this.player.pos[0] ) {
+                tree.disappear=true;
+
+            }
+        }
+
+
     }
 
     make_control_panel() {
@@ -266,16 +303,27 @@ export class JumpGame extends Scene {
         //if y coord<=1(height of blocks), then check if above a block, if yes stop, if not keep going
         //if not above a block fail end game
 
-        if (this.player.pos[1] <= 1) { //simply check if x-coord falls within that range
+        if (this.player.pos[1] < 1) { //simply check if x-coord falls within that range
             this.onBlock=false;
-            for (let tree of this.trees)
-                if(tree.pos[0]-1<=this.player.pos[0]&&tree.pos[0]+1>=this.player.pos[0]){
-                    this.onBlock=true;
+            for (let tree of this.trees) {
+                //make game easier by not looking at center of mass of block but just the edges
+
+                if (tree.pos[0] - 1 <= this.player.pos[0] && tree.pos[0] + 1 >= this.player.pos[0]) {
+                    this.onBlock = true;
                 }
+            }
             if(this.onBlock==true) {
                 this.player.land(1);
+                this.update_tree();
+
+                //generate new blocks and erase old blocks
+
             }
+
+
         }
+
+        //reset game if this happens
         if(this.player.pos[1]<=0){
             this.gameOver=true;
         }
