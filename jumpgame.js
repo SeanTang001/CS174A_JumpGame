@@ -209,18 +209,9 @@ export class JumpGame extends Scene {
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        /*this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => null);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-        this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
-        this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
-        this.new_line();
-        this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);*/
-        this.key_triggered_button("Jump(distance proportional to duration of key press" +
-            "", ["j"], () => this.player.jump(false),
+        this.key_triggered_button("Jump(distance proportional to duration of key press", ["j"], () => this.player.jump(false),
             "hi", () => this.player.jump(true));
+        this.key_triggered_button("Change Color", ["c"], () => {this.set_colors()});
     }
 
     display(context, program_state) {
