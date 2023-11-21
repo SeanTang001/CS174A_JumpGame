@@ -1,4 +1,5 @@
 import {defs, tiny} from './examples/common.js';
+import {Shape_From_File} from './examples/obj-file-demo.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -85,73 +86,54 @@ class Tree {
     }
 }
 
-class TreeShape extends Shape {
-    constructor() {
-        super("position", "normal");
-
-        this.arrays.position.push(...Vector3.cast(
-            [1,0,0],//0
-            [0,0,-1],//1
-            [0,2,0],//4
-            [-1,0,0],//2
-            [0,0,1],//3
-            [0,0,-1],//1
-            [1,0,0],//0
-            [0,2,0],//4
-            [0,0,1],//3
-            ));
-        this.arrays.normal.push(...Vector3.cast(
-            [1,0,0],
-            [0,0,-1],
-            [-1,0,0]
-            [0,0,1],
-            [0,1,0]
-        ));
-        // this.indices.push(0,1,4,2,3,1,0,4,3);
-    }
-}
-
-class TreeBackground {
+class TreeBackground{
     constructor(pos, radius, height) {
         this.pos = pos;
         this.radius = radius;
         this.height = height;
-        this.shapes = {
-            cone1: new defs.Closed_Cone(30,30),
-            cone2: new defs.Closed_Cone(30,30),
-            cone3: new defs.Closed_Cone(30,30),
-            cone4: new defs.Closed_Cone(30,30),
-            stump: new defs.Capped_Cylinder(30, 30),
-        }
 
-        this.material = new Material(new defs.Phong_Shader(),
-        {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")});
+        // Load the model file:
+      this.shapes = {
+        tree: new Shape_From_File("../assets/objects/Lowpoly_tree_sample.obj")
+      };
+
+      // Non bump mapped:
+      this.tree = new Material(new defs.Phong_Shader(), {
+          color: color(.5, .5, .5, 1),
+          ambient: .3, diffusivity: .5, specularity: .5,
+      });
     }
 
     draw(context, program_state, t, color, shading) {
-        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0).times(Mat4.rotation(Math.PI/2,1,0,0)));
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0));
         tree_transform.pre_multiply(Mat4.translation(...this.pos));
-        //let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0).times(Mat4.translation(...this.pos).times(Mat4.rotation(Math.PI/2,1,0,0))));
-        this.shapes.stump.draw(context, program_state, tree_transform, this.material);
+        this.shapes.tree.draw(context, program_state, tree_transform, this.tree);
+    }
+}
 
-        tree_transform.times(Mat4.rotation(Math.PI/2, 1,0,0))
 
-        tree_transform.times(Mat4.translation(0, this.height, 0));
+class Floor{
+    constructor(pos, radius, height) {
+        this.pos = pos;
+        this.radius = radius;
+        this.height = height;
 
-        this.shapes.cone1.draw(context, program_state, tree_transform, this.material);
+        // Load the model file:
+      this.shapes = {
+        floor: new defs.Cube()
+      };
 
-        tree_transform.times(Mat4.translation(0,this.height,0));
+      // Non bump mapped:
+      this.floor = new Material(new defs.Phong_Shader(), {
+          color: color(.5, .5, .5, 1),
+          ambient: .3, diffusivity: .5, specularity: .5,
+      });
+    }
 
-        this.shapes.cone2.draw(context, program_state, tree_transform, this.material);
-
-        tree_transform.times(Mat4.translation(0,this.height,0));
-
-        this.shapes.cone3.draw(context, program_state, tree_transform, this.material);
-
-        tree_transform.times(Mat4.translation(0,this.height*5,0));
-
-        this.shapes.cone3.draw(context, program_state, tree_transform, this.material);
-
+    draw(context, program_state, t, color, shading) {
+        let transform = Mat4.scale(30,0.1,15);
+        transform.pre_multiply(Mat4.translation(...vec3(5,0,0)));
+        this.shapes.floor.draw(context, program_state, transform, this.floor);
     }
 }
 
@@ -180,16 +162,26 @@ export class JumpGame extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
             ring: new Material(new defs.Phong_Shader()),
         }
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.gameOver=false;
 
         this.onBlock=false;
 
+        this.initial_camera_location = Mat4.look_at(vec3(-6, 14, 6), vec3(3, 3, 0), vec3(0, 1, 0));
         // Game initialization
         this.player = new Player(vec3(0,1,0));
         this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
-        this.tree_background = new TreeBackground(vec3(0,3,0),1,1);
+        this.tree_backgrounds = [
+            new TreeBackground(vec3(-5,5,-3),3,3), 
+            new TreeBackground(vec3(0,5,-3),3,3),
+            new TreeBackground(vec3(5,5,-3),3,3),
+            new TreeBackground(vec3(10,5,-3),3,3),          
+            new TreeBackground(vec3(-5,0,9),3,3), 
+            new TreeBackground(vec3(0,0,9),3,3),
+            new TreeBackground(vec3(5,0,9),3,3),
+            new TreeBackground(vec3(10,0,9),3,3),          
+        ];
+        this.floor = new Floor();
         this.set_colors();
     }
 
@@ -281,6 +273,10 @@ export class JumpGame extends Scene {
             this.player.draw(context, program_state);
             return;
         }
+        for (let i = 0; i < this.tree_backgrounds.length; i++){
+            this.tree_backgrounds[i].draw(context, program_state, t, this.colors[i], shading);
+        }
+        this.floor.draw(context, program_state);
 
         this.player.update();
         //if y coord<=1(height of blocks), then check if above a block, if yes stop, if not keep going
@@ -300,7 +296,7 @@ export class JumpGame extends Scene {
             this.gameOver=true;
         }
         this.player.draw(context, program_state);
-        this.tree_background.draw(context, program_state)
+
     }
 }
 
