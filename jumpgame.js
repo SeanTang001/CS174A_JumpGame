@@ -106,9 +106,10 @@ class TreeBackground{
       });
     }
 
-    draw(context, program_state, t, color, shading) {
+    draw(context, program_state,  t, color, shading, offset) {
         let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0));
         tree_transform.pre_multiply(Mat4.translation(...this.pos));
+        tree_transform.pre_multiply(Mat4.translation(...offset));
         this.shapes.tree.draw(context, program_state, tree_transform, this.tree);
     }
 }
@@ -116,7 +117,7 @@ class TreeBackground{
 
 class Floor{
     constructor(pos, radius, height) {
-        this.pos = pos;
+        this.pos = vec3(5,0,0);
         this.radius = radius;
         this.height = height;
 
@@ -133,9 +134,10 @@ class Floor{
         });
     }
 
-    draw(context, program_state, t, color, shading) {
-        let transform = Mat4.scale(30,0.1,15);
-        transform.pre_multiply(Mat4.translation(...vec3(5,0,0)));
+    draw(context, program_state, t, color, shading, offset) {
+        let transform = Mat4.scale(60,0.1,15);
+        transform.pre_multiply(Mat4.translation(...this.pos));
+        transform.pre_multiply(Mat4.translation(...offset));
         this.shapes.floor.draw(context, program_state, transform, this.floor);
         //set to true after player jumps off this block
         if(this.disappear==false)
@@ -161,8 +163,6 @@ export class JumpGame extends Scene {
             ring: new Material(new defs.Phong_Shader()),
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
-
         //true when player does not land on a block
         this.gameOver=false;
 
@@ -185,6 +185,7 @@ export class JumpGame extends Scene {
         ];
         this.floor = new Floor();
         this.set_colors();
+        this.offset = vec3(0,0,0);
     }
 
     set_colors() {
@@ -295,9 +296,9 @@ export class JumpGame extends Scene {
             return;
         }
         for (let i = 0; i < this.tree_backgrounds.length; i++){
-            this.tree_backgrounds[i].draw(context, program_state, t, this.colors[i], shading);
+            this.tree_backgrounds[i].draw(context, program_state, t, this.colors[i], shading, this.offset);
         }
-        this.floor.draw(context, program_state);
+        this.floor.draw(context, program_state, t, 0, shading, this.offset);
 
         this.player.update();
         //if y coord<=1(height of blocks), then check if above a block, if yes stop, if not keep going
@@ -315,7 +316,10 @@ export class JumpGame extends Scene {
             if(this.onBlock==true) {
                 this.player.land(1);
                 this.update_tree();
+                this.offset = vec3(this.player.pos[0], this.player.pos[1]-3, 0);
+                program_state.set_camera(Mat4.look_at(vec3(-6+this.player.pos[0], 14+this.player.pos[1], 6), vec3(3+this.player.pos[0], 3+this.player.pos[1], 0), vec3(0, 1, 0)));
 
+                // new_initial_camera_location = Mat4.look_at(vec3(0+this.player.pos[0], 10+this.player.pos[1], 20), vec3(0, 0, 0), vec3(0, 1, 0));
                 //generate new blocks and erase old blocks
 
             }
