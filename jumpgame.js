@@ -150,8 +150,18 @@ class Tree {
         // this.shape = new defs.Capped_Cylinder(30, 30);
         this.disappear = false;
 
-        this.material_gouraud = new Material(new Gouraud_Shader(),
-        {ambient: 0.5, diffusivity: .8, specularity: 1, color: hex_color("#80FFFF")});
+        let texture_t = new Texture("../assets/grass.png");
+
+        if (Math.random() > 2/3){
+            texture_t = new Texture("../assets/stars.png");
+        }else {
+            if (Math.random() > 1/3){
+                texture_t = new Texture("../assets/earth.gif");
+            }
+        }
+
+        this.material_gouraud = new Material(new defs.Textured_Phong(),
+        {ambient: 0.5, diffusivity: .8, specularity: 1, texture: texture_t, color: hex_color("#80FFFF")});
 
         this.material_phong = new Material(new defs.Phong_Shader(),
         {ambient: 0.5, diffusivity: .8, specularity: 1, color: hex_color("#80FFFF")});
@@ -227,7 +237,6 @@ class Floor{
       this.floor = new Material(new defs.Textured_Phong(), {
         color: hex_color("#ffff11"),
         ambient: 0.5, diffusivity: 0.8, specularity: 1,
-        // texture: new Texture("../assets/grass.png")
         });
     }
 
