@@ -179,7 +179,10 @@ class Tree {
         if(this.disappear==false){
             // if(Math.floor(t)%2==0)
             if (this.active){
-                this.shape.draw(context, program_state, tree_transform, this.material_gouraud); //.override({color:color}));
+                if(Math.floor(t)%2==0)
+                    this.shape.draw(context, program_state, tree_transform, this.material_gouraud); //.override({color:color}));
+                else
+                    this.shape.draw(context, program_state, tree_transform, this.material_gouraud.override({diffusivity:0.3})); //.override({color:color}));
             }else{
                 this.shape.draw(context, program_state, tree_transform, this.material_gouraud.override({ambient:0.0})); //.override({color:color})
             }
