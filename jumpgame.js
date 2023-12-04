@@ -284,14 +284,14 @@ export class JumpGame extends Scene {
             new TreeBackground(vec3(1,1,0),3,3),     
         ];
         this.floor = new Floor();
-        this.set_colors();
+        this.set_colors(this.trees.length);
         this.offset = vec3(0,0,0);
         this.light_offset = vec4(0,0,0,0);
         this.direction = 0;
 
     }
 
-    set_colors() {
+    set_colors(length) {
         // set color function
         // for (var i = 0; i < 8; i++) {
         //     this.colors[i] = color(Math.random(), Math.random(), Math.random(), 1.0);
@@ -305,9 +305,9 @@ export class JumpGame extends Scene {
         const end_color = color( 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 1.0);
         console.log(end_color);
 
-        for (let i = 0; i < 6; i++) {
-            const t = i / (6 - 1); // Calculate a ratio between 0 and 1
-    
+        for (let i = 0; i < length; i++) {
+            const t = i / (length - 1); // Calculate a ratio between 0 and 1
+
             // Interpolate between start_color and end_color based on the ratio 't'
             const new_color = color(
                 start_color[0] * (1 - t) + end_color[0] * t,
@@ -380,7 +380,7 @@ export class JumpGame extends Scene {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("Jump(distance proportional to duration of key press", ["j"], () => {this.player.jump(false)},
             "hi", () => this.player.jump(true));
-        this.key_triggered_button("Change Color", ["c"], () => {this.set_colors()});
+        this.key_triggered_button("Change Color", ["c"], () => {this.set_colors(this.trees.length)});
     }
 
     display(context, program_state) {
