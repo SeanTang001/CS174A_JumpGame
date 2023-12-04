@@ -227,14 +227,14 @@ class Floor{
         this.height = height;
 
         // Load the model file:
-      this.shapes = {
+    this.shapes = {
         // floor: new defs.Cube(),
         floor: new defs.Regular_2D_Polygon(30,30),
-      };
+    };
     //   {ambient: 0, diffusivity: .8, specularity: 1, color: hex_color("#80FFFF")});
 // 
       // Non bump mapped:
-      this.floor = new Material(new defs.Textured_Phong(), {
+    this.floor = new Material(new defs.Textured_Phong(), {
         color: hex_color("#ffff11"),
         ambient: 0.5, diffusivity: 0.8, specularity: 1,
         });
@@ -279,16 +279,37 @@ export class JumpGame extends Scene {
         // Game initialization
         this.player = new Player(vec3(0,1,0));
         // this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
-        this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(10,0,0),1.5,1)];
-        this.tree_backgrounds = [
-            new TreeBackground(vec3(1,1,0),3,3),     
-        ];
+        this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),2,1)];
+        this.tree_backgrounds = [];
+        this.plant_tree_background(this.trees[0].pos[0],this.trees[0].pos[2]);
+        this.plant_tree_background(this.trees[1].pos[0],this.trees[1].pos[2]);
         this.floor = new Floor();
         this.set_colors();
         this.offset = vec3(0,0,0);
         this.light_offset = vec4(0,0,0,0);
-        this.direction = 0;
 
+    }
+
+    plant_tree_background(posx,posz){
+        let pos1,pos2,tree_to_planting_1,tree_to_planting_2;
+        if(direction == 0){
+            //plant trees on z-axis
+            pos1 = vec3(posx + (Math.random()-0.5)*5, 0, posz + 3 + Math.random()*5);
+            tree_to_planting_1 = new TreeBackground(pos1,Math.random()*1.5,Math.random()*1.5);
+            pos2 = vec3(posx + (Math.random()-0.5)*5, 0, posz - 3 - Math.random()*5);
+            tree_to_planting_2 = new TreeBackground(pos2,1 + Math.random()*1.5,1 + Math.random()*1.5);
+            
+        } else{
+            //plant trees on x-axis
+            pos1 = vec3(posx + 3 + Math.random()*5, 0, posz + (Math.random()-0.5)*5);
+            tree_to_planting_1 = new TreeBackground(pos1,1 + Math.random()*1.5,1 + Math.random()*1.5);
+            pos2 = vec3(posx - 3 - Math.random()*5, 0, posz + (Math.random()-0.5)*5);
+            tree_to_planting_2 = new TreeBackground(pos2,1 + Math.random()*1.5,1 + Math.random()*1.5);
+        }
+        this.tree_backgrounds.push(tree_to_planting_1);
+        this.tree_backgrounds.push(tree_to_planting_2);
+        console.log("what is the background array length?");
+        console.log(this.tree_backgrounds.length);
     }
 
     set_colors() {
@@ -354,19 +375,22 @@ export class JumpGame extends Scene {
             this.lastZ-=length;
             direction = 1;
         }
-
-
+        this.plant_tree_background(this.lastX,this.lastZ);
         //disappear all the trees before the new one you land on
-
         // set the blocks it has jumped after to disappear
-        for (let tree of this.tree_backgrounds) {
-            if (tree.pos[0] + tree.radius < this.player.pos[0]) {
-                tree_pos = vec3(this.lastX-Math.random()*5,0, this.lastZ-Math.random()*5);
-            }
-            if (tree.pos[2] + tree.radius < this.player.pos[2]) {
-                tree_pos = vec3(this.lastX-Math.random()*5,0, this.lastZ-Math.random()*5);
-            }
-        }
+        // let count = 1;
+        // for (let tree of this.tree_backgrounds) {
+        //     console.log(count);
+        //     console.log(tree);
+        //     if (tree.pos[0] + tree.radius < this.player.pos[0]) {
+        //         tree_pos = vec3(this.lastX-Math.random()*5,0, this.lastZ-Math.random()*5);
+        //         console.log(tree_pos);
+        //     }
+        //     if (tree.pos[2] + tree.radius < this.player.pos[2]) {
+        //         tree_pos = vec3(this.lastX-Math.random()*5,0, this.lastZ-Math.random()*5);
+        //         console.log(tree_pos);
+        //     }
+        // }
 
         for (let tree of this.trees) {
             if (tree.pos[0] == this.player.pos[0] && tree.pos[2] == this.player.pos[2] ) {
