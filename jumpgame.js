@@ -286,7 +286,7 @@ class Tree {
             "../assets/objects/platform_texture/Panda.jpg",
             "../assets/objects/platform_texture/Pig.jpg",
             "../assets/objects/platform_texture/Rabbit.jpg",
-            "../assets/objects/platform_texture/Sheeep.jpg",
+            "../assets/objects/platform_texture/Sheep.jpg",
             "../assets/objects/platform_texture/Tiger.jpg",
         ];
 
@@ -385,7 +385,7 @@ class TreeBackground{
         return 0;
     }
     draw(context, program_state,  t, color, shading, offset) {
-        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,3,0));
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,2,0));
         tree_transform.pre_multiply(Mat4.translation(...this.pos));
         tree_transform.pre_multiply(Mat4.translation(...offset));
         this.shape.draw(context, program_state, tree_transform, this.tree);
@@ -418,7 +418,7 @@ class TrunkBackground{
         return 1;
     }
     draw(context, program_state,  t, color, shading, offset) {
-        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,3,0));
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,2,0));
         tree_transform.pre_multiply(Mat4.translation(...this.pos));
         tree_transform.pre_multiply(Mat4.translation(...offset));
         this.shape.draw(context, program_state, tree_transform, this.trunk);
@@ -451,7 +451,7 @@ class StumpBackground{
         return 2;
     }
     draw(context, program_state,  t, color, shading, offset) {
-        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,3,0));
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,1.5,0));
         tree_transform.pre_multiply(Mat4.translation(...this.pos));
         tree_transform.pre_multiply(Mat4.translation(...offset));
         this.shape.draw(context, program_state, tree_transform, this.Stump);
@@ -484,7 +484,7 @@ class LeafBackground{
         return 3;
     }
     draw(context, program_state,  t, color, shading, offset) {
-        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,3,0));
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,1.5,0));
         tree_transform.pre_multiply(Mat4.translation(...this.pos));
         tree_transform.pre_multiply(Mat4.translation(...offset));
         this.shape.draw(context, program_state, tree_transform, this.Leaves_pile);
@@ -519,7 +519,7 @@ class StoneBackground{
         return 4;
     }
     draw(context, program_state,  t, color, shading, offset) {
-        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,3,0));
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0));
         tree_transform.pre_multiply(Mat4.translation(...this.pos));
         tree_transform.pre_multiply(Mat4.translation(...offset));
         this.shape.draw(context, program_state, tree_transform, this.Leaves_pile);
@@ -593,19 +593,19 @@ export class JumpGame extends Scene {
         this.prepared_leaves =[];
         this.prepared_stones =[];
         for(let i = 0; i < 30; i++){
-            let treee = new TreeBackground(vec3(0,0,0),0.5+Math.random(),0.5+Math.random());
+            let treee = new TreeBackground(vec3(0,0,0),1+Math.random(),2+Math.random()*2);
             this.prepared_trees.push(treee);
         }
         for(let i = 0; i < 10; i++){
-            let treee = new TrunkBackground(vec3(0,0,0),0.5+Math.random(),0.5+Math.random());
+            let treee = new TrunkBackground(vec3(0,0,0),1+Math.random(),2+Math.random());
             this.prepared_trunks.push(treee);
         }
         for(let i = 0; i < 10; i++){
-            let treee = new StumpBackground(vec3(0,0,0),0.5+Math.random(),0.5+Math.random());
+            let treee = new StumpBackground(vec3(0,0,0),0.4+Math.random(),0.5+Math.random()*0.5);
             this.prepared_stumps.push(treee);
         }
         for(let i = 0; i < 10; i++){
-            let treee = new LeafBackground(vec3(0,0,0),0.5+Math.random(),0.5+Math.random());
+            let treee = new LeafBackground(vec3(0,0,0),0.4+Math.random(),0.25+Math.random()*0.25);
             this.prepared_leaves.push(treee);
         }
         for(let i = 0; i < 10; i++){
@@ -668,9 +668,9 @@ export class JumpGame extends Scene {
             //plant trees on z-axis
             for(let i = 0; i < trees2plant_num; i++){
                 if(Math.random() > 0.5){
-                    pos = vec3(posx + 2 + Math.random()*length, 0, posz + 3 + Math.random()*5);
+                    pos = vec3(posx + length/3 + Math.random()*length, 0, posz + 6 + Math.random()*6);
                 } else{
-                    pos = vec3(posx + Math.random()*length, 0, posz - 3 - Math.random()*5);
+                    pos = vec3(posx + Math.random()*(length-length/2), 0, posz - 6 - Math.random()*6);
                 }
                 tree_to_planting = this.select_type(pos);
                 add_to_arr(this.tree_backgrounds,tree_to_planting);
@@ -679,9 +679,9 @@ export class JumpGame extends Scene {
         else if(dir == 1 && direction == 0){
             for(let i = 0; i < trees2plant_num; i++){
                 if(Math.random() > 0.5){
-                    pos = vec3(posx + 3 + Math.random()*5, 0, posz - Math.random()*length);
+                    pos = vec3(posx + 6 + Math.random()*6, 0, posz - Math.random()*(length-length/2));
                 } else{
-                    pos = vec3(posx - 3 - Math.random()*5, 0, posz - 2 - Math.random()*length);
+                    pos = vec3(posx - 6 - Math.random()*6, 0, posz - length/3 - Math.random()*length);
                 }
                 tree_to_planting = this.select_type(pos);
                 add_to_arr(this.tree_backgrounds,tree_to_planting);
@@ -690,9 +690,9 @@ export class JumpGame extends Scene {
         else if(dir == 0){
             for(let i = 0; i < trees2plant_num; i++){
                 if(Math.random() > 0.5){
-                    pos = vec3(posx + Math.random()*length, 0, posz + 3 + Math.random()*5);
+                    pos = vec3(posx - length/2 + Math.random()*(length+length/2), 0, posz + 6 + Math.random()*6);
                 } else{
-                    pos = vec3(posx + Math.random()*length*0.8, 0, posz - 3 - Math.random()*5);
+                    pos = vec3(posx - length/2 + Math.random()*(length-length/2), 0, posz -6 - Math.random()*6);
                 }
                 tree_to_planting = this.select_type(pos);
                 add_to_arr(this.tree_backgrounds,tree_to_planting);
@@ -701,9 +701,9 @@ export class JumpGame extends Scene {
             //plant trees on x-axis
             for(let i = 0; i < trees2plant_num; i++){
                 if(Math.random() > 0.5){
-                    pos = vec3(posx + 3 + Math.random()*5, 0, posz - Math.random()*length*0.8);
+                    pos = vec3(posx + 6 + Math.random()*6, 0, posz + length/2 - Math.random()*(length-length/2));
                 } else{
-                    pos = vec3(posx - 3 - Math.random()*5, 0, posz - Math.random()*length);
+                    pos = vec3(posx - 6 - Math.random()*6, 0, posz + length/2 - Math.random()*(length+length/2));
                 }
                 tree_to_planting = this.select_type(pos);
                 add_to_arr(this.tree_backgrounds,tree_to_planting);
