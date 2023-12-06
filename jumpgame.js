@@ -335,7 +335,6 @@ class Tree {
         
         tree_transform.pre_multiply(Mat4.translation(...this.pos));
         //let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0).times(Mat4.translation(...this.pos).times(Mat4.rotation(Math.PI/2,1,0,0))));
-
         this.shape.draw(context, program_state, tree_transform, this.platform);
         
         // if(this.disappear==false){
@@ -616,7 +615,7 @@ export class JumpGame extends Scene {
 
         this.plant_tree_background(this.lastX,this.trees[0].pos[0],this.trees[0].pos[2],0);
         this.floor = new Floor();
-        this.set_colors();
+        this.set_colors(this.trees.length);
         this.offset = vec3(0,0,0);
         this.light_offset = vec4(0,0,0,0);
 
@@ -711,7 +710,7 @@ export class JumpGame extends Scene {
         }
     }
 
-    set_colors() {
+    set_colors(length) {
         // set color function
         // for (var i = 0; i < 8; i++) {
         //     this.colors[i] = color(Math.random(), Math.random(), Math.random(), 1.0);
@@ -725,9 +724,9 @@ export class JumpGame extends Scene {
         const end_color = color( 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.5, 1.0);
         console.log(end_color);
 
-        for (let i = 0; i < 6; i++) {
-            const t = i / (6 - 1); // Calculate a ratio between 0 and 1
-    
+        for (let i = 0; i < length; i++) {
+            const t = i / (length - 1); // Calculate a ratio between 0 and 1
+
             // Interpolate between start_color and end_color based on the ratio 't'
             const new_color = color(
                 start_color[0] * (1 - t) + end_color[0] * t,
@@ -793,7 +792,7 @@ export class JumpGame extends Scene {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("Jump(distance proportional to duration of key press", ["j"], () => {this.player.jump(false)},
             "hi", () => this.player.jump(true));
-        this.key_triggered_button("Change Color", ["c"], () => {this.set_colors()});
+        this.key_triggered_button("Change Color", ["c"], () => {this.set_colors(this.trees.length)});
     }
 
     display(context, program_state) {
@@ -837,7 +836,6 @@ export class JumpGame extends Scene {
 
         // The parameters of the Light are: position, color, size
         program_state.lights = [new Light(light_position, color(1, 1, 1, 0.1), 100)];
-
 
         //this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
         /*let tree_transform = Mat4.rotation(Math.PI/2, 1, 0, 0);
@@ -918,7 +916,6 @@ export class JumpGame extends Scene {
                         block_z = tree.pos[2]
                     }
                 }
-
             }
             if(this.onBlock==true) {
                 this.player.land(block_x, block_y, block_z,1);
@@ -927,13 +924,10 @@ export class JumpGame extends Scene {
                 if (!debug){
                     program_state.set_camera(Mat4.look_at(vec3(-6*factor+this.player.pos[0], 20*factor+this.player.pos[1], 6*factor+this.player.pos[2]), vec3(3+this.player.pos[0], 3+this.player.pos[1], 0+this.player.pos[2]), vec3(0, 1, 0)));
                 }
-
                 // new_initial_camera_location = Mat4.look_at(vec3(0+this.player.pos[0], 10+this.player.pos[1], 20), vec3(0, 0, 0), vec3(0, 1, 0));
                 //generate new blocks and erase old blocks
-
             }
         }
-
         //reset game if this happens
         if(this.player.pos[1]<=0){
             this.gameOver=true;
@@ -942,191 +936,6 @@ export class JumpGame extends Scene {
 
     }
 }
-
-// Gouraud Shader 
-// class Gouraud_Shader extends Phong_Shader {
-//     // This is a Shader using Phong_Shader as template
-
-//     constructor(num_lights = 2) {
-//         super();
-//         this.num_lights = num_lights;
-//     }
-
-//     shared_glsl_code() {
-//         // ********* SHARED CODE, INCLUDED IN BOTH SHADERS *********
-//         return ` 
-//         precision mediump float;
-//         const int N_LIGHTS = ` + this.num_lights + `;
-//         uniform float ambient, diffusivity, specularity, smoothness;
-//         uniform vec4 light_positions_or_vectors[N_LIGHTS], light_colors[N_LIGHTS];
-//         uniform float light_attenuation_factors[N_LIGHTS];
-//         uniform vec4 shape_color;
-//         uniform vec3 squared_scale, camera_center;
-
-//         // Specifier "varying" means a variable's final value will be passed from the vertex shader
-//         // on to the next phase (fragment shader), then interpolated per-fragment, weighted by the
-//         // pixel fragment's proximity to each of the 3 vertices (barycentric interpolation).
-//         varying vec3 N, vertex_worldspace;
-//         varying vec4 color; 
-
-//         // ***** PHONG SHADING HAPPENS HERE: *****                                       
-//         vec3 phong_model_lights( vec3 N, vec3 vertex_worldspace ){                                        
-//             // phong_model_lights():  Add up the lights' contributions.
-//             vec3 E = normalize( camera_center - vertex_worldspace );
-//             vec3 result = vec3( 0.0 );
-//             for(int i = 0; i < N_LIGHTS; i++){
-//                 // Lights store homogeneous coords - either a position or vector.  If w is 0, the 
-//                 // light will appear directional (uniform direction from all points), and we 
-//                 // simply obtain a vector towards the light by directly using the stored value.
-//                 // Otherwise if w is 1 it will appear as a point light -- compute the vector to 
-//                 // the point light's location from the current surface point.  In either case, 
-//                 // fade (attenuate) the light as the vector needed to reach it gets longer.  
-//                 vec3 surface_to_light_vector = light_positions_or_vectors[i].xyz - 
-//                                                light_positions_or_vectors[i].w * vertex_worldspace;                                             
-//                 float distance_to_light = length( surface_to_light_vector );
-
-//                 vec3 L = normalize( surface_to_light_vector );
-//                 vec3 H = normalize( L + E );
-//                 // Compute the diffuse and specular components from the Phong
-//                 // Reflection Model, using Blinn's "halfway vector" method:
-//                 float diffuse  =      max( dot( N, L ), 0.0 );
-//                 float specular = pow( max( dot( N, H ), 0.0 ), smoothness );
-//                 float attenuation = 1.0 / (1.0 + light_attenuation_factors[i] * distance_to_light * distance_to_light );
-                
-//                 vec3 light_contribution = shape_color.xyz * light_colors[i].xyz * diffusivity * diffuse
-//                                                           + light_colors[i].xyz * specularity * specular;
-//                 result += attenuation * light_contribution;
-//             }
-//             return result;
-//         } `;
-//     }
-
-//     vertex_glsl_code() {
-//         // ********* VERTEX SHADER *********
-//         return this.shared_glsl_code() + `
-//             attribute vec3 position, normal;                            
-//             // Position is expressed in object coordinates.
-            
-//             uniform mat4 model_transform;
-//             uniform mat4 projection_camera_model_transform;
-    
-//             void main(){                                                                   
-//                 // The vertex's final resting place (in NDCS):
-//                 gl_Position = projection_camera_model_transform * vec4( position, 1.0 );
-//                 // The final normal vector in screen space.
-//                 N = normalize( mat3( model_transform ) * normal / squared_scale);
-//                 vertex_worldspace = ( model_transform * vec4( position, 1.0 ) ).xyz;
-//                 // Added: calculate vertex's color 
-//                 color = vec4(shape_color.xyz * ambient, shape_color.w);
-//                 color.xyz += phong_model_lights(N, vertex_worldspace);
-//             } `;
-//     }
-
-//     fragment_glsl_code() {
-//         // ********* FRAGMENT SHADER *********
-//         // A fragment is a pixel that's overlapped by the current triangle.
-//         // Fragments affect the final image or get discarded due to depth.
-//         return this.shared_glsl_code() + `
-//             uniform vec4  lightPositionOC;   // in object coordinates
-//             uniform vec3  spotDirectionOC;  // in object coordinates
-//             uniform float  spotCutoff;           // in degrees
-            
-//             void main(void)
-//             {
-//             vec3 lightPosition;
-//             vec3 spotDirection;
-//             vec3 lightDirection;
-//             float angle;
-            
-//                 gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-            
-//                 // Transforms light position and direction into eye coordinates
-//                 lightPosition   =  lightPositionOC;
-//                 spotDirection  = spotDirectionOC;
-                
-//                 spotDirection = normalize(spotDirection);
-                
-//                 // Calculates the light vector (vector from light position to vertex)
-//                 vec4 vertex = gl_ModelViewMatrix * gl_Vertex;
-//                 lightDirection = normalize( (gl_Vertex * matWorld).xyz - lightPosition.xyz);
-            
-//                 // Calculates the angle between the spot light direction vector and the light vector
-//                 angle = dot( normalize(spotDirection),
-//                             normalize(lightDirection));
-//                 angle = max(angle,0);   
-            
-//             // Test whether vertex is located in the cone
-//             if(acos (angle) > radians(spotCutoff))
-//                 gl_FrontColor = vec4(0,0,0,1); // unlit(black)   
-//             else
-//                 gl_FrontColor = vec4(1,1,0,1); // lit (yellow)
-//             }
-//             `
-//             ;
-//     }
-
-//     send_material(gl, gpu, material) {
-//         // send_material(): Send the desired shape-wide material qualities to the
-//         // graphics card, where they will tweak the Phong lighting formula.
-//         gl.uniform4fv(gpu.shape_color, material.color);
-//         gl.uniform1f(gpu.ambient, material.ambient);
-//         gl.uniform1f(gpu.diffusivity, material.diffusivity);
-//         gl.uniform1f(gpu.specularity, material.specularity);
-//         gl.uniform1f(gpu.smoothness, material.smoothness);
-//     }
-
-//     send_gpu_state(gl, gpu, gpu_state, model_transform) {
-//         // send_gpu_state():  Send the state of our whole drawing context to the GPU.
-//         const O = vec4(0, 0, 0, 1), camera_center = gpu_state.camera_transform.times(O).to3();
-//         gl.uniform3fv(gpu.camera_center, camera_center);
-//         // Use the squared scale trick from "Eric's blog" instead of inverse transpose matrix:
-//         const squared_scale = model_transform.reduce(
-//             (acc, r) => {
-//                 return acc.plus(vec4(...r).times_pairwise(r))
-//             }, vec4(0, 0, 0, 0)).to3();
-//         gl.uniform3fv(gpu.squared_scale, squared_scale);
-//         // Send the current matrices to the shader.  Go ahead and pre-compute
-//         // the products we'll need of the of the three special matrices and just
-//         // cache and send those.  They will be the same throughout this draw
-//         // call, and thus across each instance of the vertex shader.
-//         // Transpose them since the GPU expects matrices as column-major arrays.
-//         const PCM = gpu_state.projection_transform.times(gpu_state.camera_inverse).times(model_transform);
-//         gl.uniformMatrix4fv(gpu.model_transform, false, Matrix.flatten_2D_to_1D(model_transform.transposed()));
-//         gl.uniformMatrix4fv(gpu.projection_camera_model_transform, false, Matrix.flatten_2D_to_1D(PCM.transposed()));
-
-//         // Omitting lights will show only the material color, scaled by the ambient term:
-//         if (!gpu_state.lights.length)
-//             return;
-
-//         const light_positions_flattened = [], light_colors_flattened = [];
-//         for (let i = 0; i < 4 * gpu_state.lights.length; i++) {
-//             light_positions_flattened.push(gpu_state.lights[Math.floor(i / 4)].position[i % 4]);
-//             light_colors_flattened.push(gpu_state.lights[Math.floor(i / 4)].color[i % 4]);
-//         }
-
-//         gl.uniform4fv(gpu.light_positions_or_vectors, light_positions_flattened);
-//         gl.uniform4fv(gpu.lightPositionOC, gpu_state.lights[0].position);
-//         gl.uniform4fv(gpu.spotDirection, vec4(-1,-1,-1,1));
-//         gl.uniform1f(gpu.spotCutoff, 30.0);
-//         gl.uniform4fv(gpu.light_colors, light_colors_flattened);
-//         gl.uniform1fv(gpu.light_attenuation_factors, gpu_state.lights.map(l => l.attenuation));
-//     }
-
-//     update_GPU(context, gpu_addresses, gpu_state, model_transform, material) {
-//         // update_GPU(): Define how to synchronize our JavaScript's variables to the GPU's.  This is where the shader
-//         // recieves ALL of its inputs.  Every value the GPU wants is divided into two categories:  Values that belong
-//         // to individual objects being drawn (which we call "Material") and values belonging to the whole scene or
-//         // program (which we call the "Program_State").  Send both a material and a program state to the shaders
-//         // within this function, one data field at a time, to fully initialize the shader for a draw.
-
-//         // Fill in any missing fields in the Material object with custom defaults for this shader:
-//         const defaults = {color: color(0, 0, 0, 1), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40};
-//         material = Object.assign({}, defaults, material);
-
-//         this.send_material(context, gpu_addresses, material);
-//         this.send_gpu_state(context, gpu_addresses, gpu_state, model_transform);
-//     }
-// }
 
 // Gouraud Shader 
 class Gouraud_Shader extends Shader {
