@@ -558,6 +558,39 @@ class Floor{
     }
 }
 
+class SkyBox {
+    constructor(center, size, side_color, bottom_color) {
+        this.center = center;
+        this.size = size;
+        this.side_color = side_color;
+        this.bottom_color = bottom_color;
+
+        this.plate = new defs.Square();
+        this.material = new Material(new defs.Phong_Shader(), {
+            color: hex_color("#11FF00"), ambient: 1, diffusivity: 0, specularity: 0
+        });
+    }
+    
+    draw(context, program_state) {
+        let translate = Mat4.translation(...this.center);
+        let invtranslate = Mat4.translation(...this.center.map(x => -x));
+        let transform = translate.times(
+                        Mat4.translation(0,-this.size,0).times(
+                        Mat4.rotation(Math.PI/2, 1, 0, 0).times(
+                        Mat4.scale(this.size, this.size, 1))));
+        this.plate.draw(context, program_state, transform, this.material.override({color: this.bottom_color}));
+        transform = translate.times(Mat4.rotation(-Math.PI/2, 1, 0, 0).times(invtranslate.times(transform)));
+        for (let i = 0; i<4; i++) {
+            this.plate.draw(context, program_state, transform, this.material.override({color:this.side_color}));
+            transform = translate.times(Mat4.rotation(Math.PI/2, 0, 1, 0).times(invtranslate.times(transform)));
+        }
+    }
+
+    update_center(center) {
+        this.center = center;
+    }
+}
+
 export class JumpGame extends Scene {
     constructor() {
 
@@ -587,6 +620,7 @@ export class JumpGame extends Scene {
         this.onBlock=false;
 
         this.initial_camera_location = Mat4.look_at(vec3(-6*factor, 15*factor, 8*factor), vec3(0, 2, 0), vec3(0, 1, 0));
+        this.desired_camera_location = this.initial_camera_location;
         // this.initial_camera_location = Mat4.look_at(vec3(5, 0, 60), vec3(5, 0, 0), vec3(0, 1, 0));
         this.lastX = 10;
         this.lastZ = 0;
@@ -625,6 +659,7 @@ export class JumpGame extends Scene {
         this.plant_tree_background(this.lastX,this.trees[0].pos[0],this.trees[0].pos[2],0);
 
         this.floor = new Floor();
+        this.skybox = new SkyBox(this.player.pos.plus(vec3(0,20,0)), 25, hex_color("#5fb9ed"), hex_color("#20de1d"));
         this.set_colors(this.trees.length);
         this.offset = vec3(0,0,0);
         this.light_offset = vec4(0,0,0,0);
@@ -859,6 +894,7 @@ export class JumpGame extends Scene {
             this.tree_backgrounds[i].draw(context, program_state, t, this.colors[i], shading, tree_pos);
         }
         this.floor.draw(context, program_state, t, 0, shading, this.offset);
+        this.skybox.draw(context, program_state);
 
         if(this.gameOver) {
             this.player.draw(context, program_state);
@@ -934,9 +970,12 @@ export class JumpGame extends Scene {
             if(this.onBlock==true) {
                 this.player.land(block_x, block_y, block_z,1);
                 this.update_tree();
+                this.skybox.update_center(this.player.pos.plus(vec3(0,20,0)));
                 this.offset = vec3(this.player.pos[0], this.player.pos[1]-3, this.player.pos[2]);
                 if (!debug){
-                    program_state.set_camera(Mat4.look_at(vec3(-6*factor+this.player.pos[0], 15*factor+this.player.pos[1], 8*factor+this.player.pos[2]), vec3(3+this.player.pos[0], 3+this.player.pos[1], 0+this.player.pos[2]), vec3(0, 1, 0)));
+                    //program_state.set_camera(Mat4.look_at(vec3(-6*factor+this.player.pos[0], 15*factor+this.player.pos[1], 8*factor+this.player.pos[2]), vec3(3+this.player.pos[0], 3+this.player.pos[1], 0+this.player.pos[2]), vec3(0, 1, 0)));
+                    this.desired_camera_location = Mat4.look_at(vec3(-6*factor+this.player.pos[0], 15*factor+this.player.pos[1], 8*factor+this.player.pos[2]), vec3(3+this.player.pos[0], 3+this.player.pos[1], 0+this.player.pos[2]), vec3(0, 1, 0));
+
                 }
                 // new_initial_camera_location = Mat4.look_at(vec3(0+this.player.pos[0], 10+this.player.pos[1], 20), vec3(0, 0, 0), vec3(0, 1, 0));
                 //generate new blocks and erase old blocks
@@ -947,6 +986,8 @@ export class JumpGame extends Scene {
             this.gameOver=true;
 
         }
+        const camera_mat = this.desired_camera_location.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1));
+        program_state.set_camera(camera_mat);
         this.player.draw(context, program_state);
 
     }
