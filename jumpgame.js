@@ -535,13 +535,13 @@ class Floor{
         // Load the model file:
         this.shapes = {
             // floor: new defs.Cube(),
-            floor: new defs.Regular_2D_Polygon(30,30),
+            floor: new defs.Regular_2D_Polygon(20,20),
         };
         //   {ambient: 0, diffusivity: .8, specularity: 1, color: hex_color("#80FFFF")});
     // 
         // Non bump mapped:
         this.floor = new Material(new defs.Textured_Phong(), {
-            texture:texture_t, color: hex_color("#ffff11"), 
+            texture:texture_t, color: hex_color("#11FF00"), 
             ambient: 0.5, diffusivity: 0.8, specularity: 1,
             });
     }
@@ -581,12 +581,12 @@ export class JumpGame extends Scene {
 
         this.initial_camera_location = Mat4.look_at(vec3(-6*factor, 15*factor, 8*factor), vec3(0, 2, 0), vec3(0, 1, 0));
         // this.initial_camera_location = Mat4.look_at(vec3(5, 0, 60), vec3(5, 0, 0), vec3(0, 1, 0));
-        this.lastX = 20;
+        this.lastX = 10;
         this.lastZ = 0;
         // Game initialization
         this.player = new Player(vec3(0,3,0));
         // this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
-        this.trees = [new Tree(vec3(0,0,0),1.5,1), new Tree(vec3(this.lastX,0,0),1.5,1)];
+        this.trees = [new Tree(vec3(0,2,0),1,1), new Tree(vec3(this.lastX,2,0),1.5,1)];
         this.tree_backgrounds = [];
         this.prepared_trees =[];
         this.prepared_trunks =[];
