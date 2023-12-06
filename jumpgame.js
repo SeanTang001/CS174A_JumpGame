@@ -581,11 +581,12 @@ export class JumpGame extends Scene {
 
         this.initial_camera_location = Mat4.look_at(vec3(-6*factor, 20*factor, 6*factor), vec3(3, 3, 0), vec3(0, 1, 0));
         // this.initial_camera_location = Mat4.look_at(vec3(5, 0, 60), vec3(5, 0, 0), vec3(0, 1, 0));
-
+        this.lastX = 20;
+        this.lastZ = 0;
         // Game initialization
         this.player = new Player(vec3(0,1,0));
         // this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
-        this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),2,1)];
+        this.trees = [new Tree(vec3(0,0,0),1.5,1), new Tree(vec3(this.lastX,0,0),1.5,1)];
         this.tree_backgrounds = [];
         this.prepared_trees =[];
         this.prepared_trunks =[];
@@ -612,14 +613,13 @@ export class JumpGame extends Scene {
             let treee = new StoneBackground(vec3(0,0,0),0.5+Math.random(),0.5+Math.random());
             this.prepared_stones.push(treee);
         }
-        
-        this.plant_tree_background(5,this.trees[0].pos[0],this.trees[0].pos[2],0);
+
+        this.plant_tree_background(this.lastX,this.trees[0].pos[0],this.trees[0].pos[2],0);
         this.floor = new Floor();
         this.set_colors();
         this.offset = vec3(0,0,0);
         this.light_offset = vec4(0,0,0,0);
-        this.lastX = 5;
-        this.lastZ = 0;
+
         // next consider looking at planting trees along the road till the next pos, instead of only at the side of last bump
         // look at the bumps(trees) change the size and model to make them look nicer and have some randomnes
     }
