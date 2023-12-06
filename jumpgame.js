@@ -11,6 +11,8 @@ let direction = 0;
 let tree_pos = vec3(0,0,0);
 let TIMESTEP = 0;
 const GRAVITY_VECTOR = vec3(0,1,0);
+let zoom_in = true;
+let zoom_out = true;
 
 function calculateFrustumPlanes(viewMatrix, projectionMatrix) {
     let vpMatrix = projectionMatrix.times(viewMatrix);
@@ -794,6 +796,21 @@ export class JumpGame extends Scene {
         this.key_triggered_button("Jump(distance proportional to duration of key press", ["j"], () => {this.player.jump(false)},
             "hi", () => this.player.jump(true));
         this.key_triggered_button("Change Color", ["c"], () => {this.set_colors(this.trees.length)});
+        this.key_triggered_button("Zoom Out for next round", ["k"], () => {
+            if (zoom_out || !zoom_in) {
+                zoom_out = false; // Disable further zoom out
+                zoom_in = true; // Enable zoom in
+                factor += 0.5; // Zoom out by increasing the factor
+            }
+        });
+        
+        this.key_triggered_button("Zoom In for next round", ["l"], () => {
+            if (zoom_in || !zoom_out) {
+                zoom_in = false; // Disable further zoom in
+                zoom_out = true; // Enable zoom out
+                factor -= 0.5; // Zoom in by decreasing the factor
+            }
+        });
     }
 
     display(context, program_state) {
@@ -807,7 +824,7 @@ export class JumpGame extends Scene {
         }
 
         program_state.projection_transform = Mat4.perspective(
-            Math.PI / 4, context.width / context.height, .1, 1000);
+            Math.PI / 5, context.width / context.height, .1, 1000);
 
         // TODO: Create Planets (Requirement 1)
         // this.shapes.[XXX].draw([XXX]) // <--example
