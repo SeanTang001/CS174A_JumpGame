@@ -6,12 +6,123 @@ const {
 } = tiny;
 
 let debug = 0;
-let factor = 2;
+let factor = 1.5;
 let direction = 0;
 let tree_pos = vec3(0,0,0);
 let TIMESTEP = 0;
 const GRAVITY_VECTOR = vec3(0,1,0);
+
 let attempts=0;
+
+function calculateFrustumPlanes(viewMatrix, projectionMatrix) {
+    let vpMatrix = projectionMatrix.times(viewMatrix);
+    let planes = {
+        left:   {},
+        right:  {},
+        top:    {},
+        bottom: {},
+        near:   {},
+        far:    {}
+    };
+    planes.left = { 
+        x: vpMatrix[3][0] + vpMatrix[0][0],
+        y: vpMatrix[3][1] + vpMatrix[0][1],
+        z: vpMatrix[3][2] + vpMatrix[0][2],
+        w: vpMatrix[3][3] + vpMatrix[0][3]
+    };
+    normalizePlane(planes.left);
+
+    planes.right = { 
+        x: vpMatrix[3][0] - vpMatrix[0][0],
+        y: vpMatrix[3][1] - vpMatrix[0][1],
+        z: vpMatrix[3][2] - vpMatrix[0][2],
+        w: vpMatrix[3][3] - vpMatrix[0][3]
+    };
+    normalizePlane(planes.right);
+
+    // Bottom Plane
+    planes.bottom = { 
+        x: vpMatrix[3][0] + vpMatrix[1][0],
+        y: vpMatrix[3][1] + vpMatrix[1][1],
+        z: vpMatrix[3][2] + vpMatrix[1][2],
+        w: vpMatrix[3][3] + vpMatrix[1][3]
+    };
+    normalizePlane(planes.bottom);
+
+
+    // Top Plane
+    planes.top = { 
+        x: vpMatrix[3][0] - vpMatrix[0][0],
+        y: vpMatrix[3][1] - vpMatrix[0][1],
+        z: vpMatrix[3][2] - vpMatrix[0][2],
+        w: vpMatrix[3][3] - vpMatrix[0][3]
+    };
+    normalizePlane(planes.top);
+
+    // Near Plane
+    planes.near = { 
+        x: vpMatrix[3][0] + vpMatrix[2][0],
+        y: vpMatrix[3][1] + vpMatrix[2][1],
+        z: vpMatrix[3][2] + vpMatrix[2][2],
+        w: vpMatrix[3][3] + vpMatrix[2][3]
+    };
+    normalizePlane(planes.near);
+
+    // Far Plane
+    planes.far = { 
+        x: vpMatrix[3][0] - vpMatrix[2][0],
+        y: vpMatrix[3][1] - vpMatrix[2][1],
+        z: vpMatrix[3][2] - vpMatrix[2][2],
+        w: vpMatrix[3][3] - vpMatrix[2][3]
+    };
+    normalizePlane(planes.far);
+
+    return planes;
+}
+function normalizePlane(plane) {
+    let length = Math.sqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
+    plane.x /= length;
+    plane.y /= length;
+    plane.z /= length;
+    plane.w /= length;
+}
+
+function isObjectWithinFrustum(object, frustumPlanes) {
+    // Assuming the object has a position (center of bounding sphere) and a radius
+    let center = object.pos;
+    let radius = object.radius;
+
+    // Check if the sphere is outside any of the frustum planes
+    for (let plane in frustumPlanes) {
+        // console.log("hhhhhhhhhhhh");
+        // console.log(plane);
+        // console.log("eeeeeeeeeeeee");
+        // console.log(frustumPlanes[plane]);
+        let planeNormal = { x: frustumPlanes[plane].x, y: frustumPlanes[plane].y, z: frustumPlanes[plane].z };
+        let distance = dotProduct(planeNormal, center) + frustumPlanes[plane].w;
+        if (distance < -radius) {
+            return false;
+        }
+    }
+    // The object is inside all planes and therefore visible
+    return true;
+}
+function dotProduct(a, b) {
+    return a.x * b[0] + a.y * b[1] + a.z * b[2];
+}
+function delete_from_arr(array, index) {
+    console.log("hey!");
+    console.log(index);
+    console.log(array);
+    let node = array[index];
+    array.splice(index, 1);
+    return node
+    
+}
+function add_to_arr(array, node) {
+    array.push(node);
+}
+
 class Player {
     // "pos" is the location of the center of the bottom face of the player
     constructor(pos) {
@@ -19,7 +130,7 @@ class Player {
         this.vel = vec3(0,0,0);
         this.shape = new Shape_From_File("../assets/objects/light.obj")
         this.material = new Material(new defs.Phong_Shader(),
-            {ambient: 1, diffusivity: .6, color: hex_color("#ffff11")});
+            {ambient: 1, diffusivity: .4, color: hex_color("#ffff11")});
         this.falling = false;
         this.time=0;
         this.squish = 1;
@@ -141,58 +252,107 @@ class Tree {
         this.pos = pos;
         this.radius = radius;
         this.height = height;
+        let random = Math.floor(Math.random() * 17);
+        let shape_paths = [
+            "../assets/objects/platform/Bear.obj",
+            "../assets/objects/platform/Bird.obj",
+            "../assets/objects/platform/Cat.obj",
+            "../assets/objects/platform/Chicken.obj",
+            "../assets/objects/platform/Cow.obj",
+            "../assets/objects/platform/Dog.obj",
+            "../assets/objects/platform/Dragon.obj",
+            "../assets/objects/platform/Fox.obj",
+            "../assets/objects/platform/Giraffe.obj",
+            "../assets/objects/platform/Lion.obj",
+            "../assets/objects/platform/Monkey.obj",
+            "../assets/objects/platform/Owl.obj",
+            "../assets/objects/platform/Panda.obj",
+            "../assets/objects/platform/Pig.obj",
+            "../assets/objects/platform/Rabbit.obj",
+            "../assets/objects/platform/Sheeep.obj",
+            "../assets/objects/platform/Tiger.obj",
+        ];
+        let texture_paths = [
+            "../assets/objects/platform_texture/Bear.jpg",
+            "../assets/objects/platform_texture/Bird.jpg",
+            "../assets/objects/platform_texture/Cat.jpg",
+            "../assets/objects/platform_texture/Chicken.jpg",
+            "../assets/objects/platform_texture/Cow.jpg",
+            "../assets/objects/platform_texture/Dog.jpg",
+            "../assets/objects/platform_texture/Dragon.jpg",
+            "../assets/objects/platform_texture/Fox.jpg",
+            "../assets/objects/platform_texture/Giraffe.jpg",
+            "../assets/objects/platform_texture/Lion.jpg",
+            "../assets/objects/platform_texture/Monkey.jpg",
+            "../assets/objects/platform_texture/Owl.jpg",
+            "../assets/objects/platform_texture/Panda.jpg",
+            "../assets/objects/platform_texture/Pig.jpg",
+            "../assets/objects/platform_texture/Rabbit.jpg",
+            "../assets/objects/platform_texture/Sheep.jpg",
+            "../assets/objects/platform_texture/Tiger.jpg",
+        ];
 
-        if (Math.random() > 0.5){
-            this.shape = new defs.Capped_Cylinder(30, 30);            
-        }else if (Math.random() > 0){
-            this.shape = new defs.Cube(30, 30);            
-        }
+        let selected_shape_path = shape_paths[random];
+        let selected_texture_path = texture_paths[random];
+
+        this.shape = new Shape_From_File(selected_shape_path);
+        let texture_t = new Texture(selected_texture_path);
+
+        // if (random > 0.5){
+        //     this.shape = new Shape_From_File("../assets/objects/platform/Bear.obj");          
+        // }
+        // else if (random > 0){
+        //     this.shape = new defs.Cube(30, 30);            
+        // }
+        // else if (random > 0){
+        //     this.shape = new defs.Cube(30, 30);            
+        // }
+        // else if (random > 0){
+        //     this.shape = new defs.Cube(30, 30);            
+        // }
         // this.shape = new defs.Capped_Cylinder(30, 30);
+
         this.disappear = false;
 
-        let texture_t = new Texture("../assets/grass.png");
+        // if (Math.random() > 2/3){
+        //     texture_t = new Texture("../assets/stars.png");
+        // }else {
+        //     if (Math.random() > 1/3){
+        //         texture_t = new Texture("../assets/earth.gif");
+        //     }
+        // }
 
-        if (Math.random() > 2/3){
-            texture_t = new Texture("../assets/stars.png");
-        }else {
-            if (Math.random() > 1/3){
-                texture_t = new Texture("../assets/earth.gif");
-            }
-        }
-
-        this.material_gouraud = new Material(new defs.Textured_Phong(),
-        {ambient: 0.5, diffusivity: .8, specularity: 1, texture: texture_t, color: hex_color("#80FFFF")});
-
-        this.material_phong = new Material(new defs.Phong_Shader(),
-        {ambient: 0.5, diffusivity: .8, specularity: 1, color: hex_color("#80FFFF")});
-
-        this.material_phong_shading = new Material(new defs.Phong_Shader(),
-        {ambient: 0.5, diffusivity: .6, specularity: 1, color: hex_color("#80FFFF")});
+        this.platform = new Material(new defs.Textured_Phong(),
+        {ambient: 0.5, diffusivity: .8, specularity: 1, texture: texture_t});
 
     }
 
     draw(context, program_state, t, color, shading) {
-        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0).times(Mat4.rotation(Math.PI/2,1,0,0)));
+        let tree_transform;
+        if(direction == 0){
+            tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0).times(Mat4.rotation(-Math.PI/2,1,0,0)).times(Mat4.rotation(-Math.PI/2,0,0,1)));
+        } else{
+            tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0).times(Mat4.rotation(-Math.PI/2,1,0,0)));
+        }
+        
         tree_transform.pre_multiply(Mat4.translation(...this.pos));
         //let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0).times(Mat4.translation(...this.pos).times(Mat4.rotation(Math.PI/2,1,0,0))));
-
-        if(this.disappear==false){
-            // if(Math.floor(t)%2==0)
-            if (this.active){
-                if(Math.floor(t)%2==0)
-                    this.shape.draw(context, program_state, tree_transform, this.material_gouraud); //.override({color:color}));
-                else
-                    this.shape.draw(context, program_state, tree_transform, this.material_gouraud.override({diffusivity:0.3})); //.override({color:color}));
-            }else{
-                this.shape.draw(context, program_state, tree_transform, this.material_gouraud.override({ambient:0.0})); //.override({color:color})
-            }
-            // else{
-            //     if (shading)
-            //         this.shape.draw(context, program_state, tree_transform, this.material_phong_shading.override({color:color}));
-            //     else
-            //         this.shape.draw(context, program_state, tree_transform, this.material_phong.override({color:color}));
-            // }
-        }
+        this.shape.draw(context, program_state, tree_transform, this.platform);
+        
+        // if(this.disappear==false){
+        //     // if(Math.floor(t)%2==0)
+        //     if (this.active){
+        //         this.shape.draw(context, program_state, tree_transform, this.material_gouraud); //.override({color:color}));
+        //     }else{
+        //         this.shape.draw(context, program_state, tree_transform, this.material_gouraud.override({ambient:0.0})); //.override({color:color})
+        //     }
+        //     // else{
+        //     //     if (shading)
+        //     //         this.shape.draw(context, program_state, tree_transform, this.material_phong_shading.override({color:color}));
+        //     //     else
+        //     //         this.shape.draw(context, program_state, tree_transform, this.material_phong.override({color:color}));
+        //     // }
+        // }
     }
 }
 
@@ -202,45 +362,189 @@ class TreeBackground{
         this.radius = radius;
         this.height = height;
 
-        // Load the model file:
-      this.shapes = {
-        tree: new Shape_From_File("../assets/objects/Lowpoly_tree_sample.obj")
-      };
+        let random = Math.floor(Math.random() * 4);
+        let shape_paths = [
+            "../assets/objects/nature_set/Tree/Tree_1.obj",
+            "../assets/objects/nature_set/Tree/Tree_2.obj",
+            "../assets/objects/nature_set/Tree/Tree_3.obj",
+            "../assets/objects/Lowpoly_tree_sample.obj",
+        ];
+        let selected_shape_path = shape_paths[random];
 
-      // Non bump mapped:
-      this.tree = new Material(new defs.Phong_Shader(), {
-          color: hex_color("#228B22"),
-          ambient: .3, diffusivity: .5, specularity: .5,
-      });
+        this.shape = new Shape_From_File(selected_shape_path);
+
+        // Non bump mapped:
+        this.tree = new Material(new defs.Phong_Shader(), {
+            color: hex_color("#00CC22"),
+            ambient: .3, diffusivity: .5, specularity: .5,
+        });
     }
+    modify_pos(new_pos){
+        this.pos = new_pos;
+    }
+    identify(){
+        return 0;
+    }
+    draw(context, program_state,  t, color, shading, offset) {
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,2,0));
+        tree_transform.pre_multiply(Mat4.translation(...this.pos));
+        tree_transform.pre_multiply(Mat4.translation(...offset));
+        this.shape.draw(context, program_state, tree_transform, this.tree);
+    }
+}
+class TrunkBackground{
+    constructor(pos, radius, height) {
+        this.pos = pos;
+        this.radius = radius;
+        this.height = height;
 
+        let random = Math.floor(Math.random() * 3);
+        let shape_paths = [
+            "../assets/objects/nature_set/Trunk/Trunk_1.obj",
+            "../assets/objects/nature_set/Trunk/Trunk_2.obj",
+            "../assets/objects/nature_set/Trunk/Trunk_3.obj",
+        ];
+        let selected_shape_path = shape_paths[random];
+        this.shape = new Shape_From_File(selected_shape_path);
+        // Non bump mapped:
+        this.trunk = new Material(new defs.Phong_Shader(), {
+            color: hex_color("#7A4814"),
+            ambient: .3, diffusivity: .5, specularity: .5,
+        });
+    }
+    modify_pos(new_pos){
+        this.pos = new_pos;
+    }
+    identify(){
+        return 1;
+    }
+    draw(context, program_state,  t, color, shading, offset) {
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,2,0));
+        tree_transform.pre_multiply(Mat4.translation(...this.pos));
+        tree_transform.pre_multiply(Mat4.translation(...offset));
+        this.shape.draw(context, program_state, tree_transform, this.trunk);
+    }
+}
+class StumpBackground{
+    constructor(pos, radius, height) {
+        this.pos = pos;
+        this.radius = radius;
+        this.height = height;
+
+        let random = Math.floor(Math.random() * 3);
+        let shape_paths = [
+            "../assets/objects/nature_set/Stump/Stump_1.obj",
+            "../assets/objects/nature_set/Stump/Stump_2.obj",
+            "../assets/objects/nature_set/Stump/Stump_3.obj",
+        ];
+        let selected_shape_path = shape_paths[random];
+        this.shape = new Shape_From_File(selected_shape_path);
+        // Non bump mapped:
+        this.Stump = new Material(new defs.Phong_Shader(), {
+            color: hex_color("#7A4814"),
+            ambient: .3, diffusivity: .5, specularity: .5,
+        });
+    }
+    modify_pos(new_pos){
+        this.pos = new_pos;
+    }
+    identify(){
+        return 2;
+    }
+    draw(context, program_state,  t, color, shading, offset) {
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,1.5,0));
+        tree_transform.pre_multiply(Mat4.translation(...this.pos));
+        tree_transform.pre_multiply(Mat4.translation(...offset));
+        this.shape.draw(context, program_state, tree_transform, this.Stump);
+    }
+}
+class LeafBackground{
+    constructor(pos, radius, height) {
+        this.pos = pos;
+        this.radius = radius;
+        this.height = height;
+
+        let random = Math.floor(Math.random() * 3);
+        let shape_paths = [
+            "../assets/objects/nature_set/Leaves_pile/Leaves_pile_1.obj",
+            "../assets/objects/nature_set/Leaves_pile/Leaves_pile_2.obj",
+            "../assets/objects/nature_set/Leaves_pile/Leaves_pile_3.obj",
+        ];
+        let selected_shape_path = shape_paths[random];
+        this.shape = new Shape_From_File(selected_shape_path);
+        // Non bump mapped:
+        this.Leaves_pile = new Material(new defs.Phong_Shader(), {
+            color: hex_color("#75A907"),
+            ambient: .3, diffusivity: .5, specularity: .5,
+        });
+    }
+    modify_pos(new_pos){
+        this.pos = new_pos;
+    }
+    identify(){
+        return 3;
+    }
+    draw(context, program_state,  t, color, shading, offset) {
+        let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,1.5,0));
+        tree_transform.pre_multiply(Mat4.translation(...this.pos));
+        tree_transform.pre_multiply(Mat4.translation(...offset));
+        this.shape.draw(context, program_state, tree_transform, this.Leaves_pile);
+    }
+}
+class StoneBackground{
+    constructor(pos, radius, height) {
+        this.pos = pos;
+        this.radius = radius;
+        this.height = height;
+
+        let random = Math.floor(Math.random() * 5);
+        let shape_paths = [
+            "../assets/objects/nature_set/Stone/StonePlatform_A.obj",
+            "../assets/objects/nature_set/Stone/StonePlatform_B.obj",
+            "../assets/objects/nature_set/Stone/StonePlatform_C.obj",
+            "../assets/objects/nature_set/Stone/StonePlatform_D.obj",
+            "../assets/objects/nature_set/Stone/StonePlatform_F.obj",
+        ];
+        let selected_shape_path = shape_paths[random];
+        this.shape = new Shape_From_File(selected_shape_path);
+        // Non bump mapped:
+        this.Leaves_pile = new Material(new defs.Phong_Shader(), {
+            color: hex_color("#40403E"),
+            ambient: .3, diffusivity: .5, specularity: .5,
+        });
+    }
+    modify_pos(new_pos){
+        this.pos = new_pos;
+    }
+    identify(){
+        return 4;
+    }
     draw(context, program_state,  t, color, shading, offset) {
         let tree_transform = Mat4.scale(this.radius,this.height,this.radius).times(Mat4.translation(0,0.5,0));
         tree_transform.pre_multiply(Mat4.translation(...this.pos));
         tree_transform.pre_multiply(Mat4.translation(...offset));
-        this.shapes.tree.draw(context, program_state, tree_transform, this.tree);
+        this.shape.draw(context, program_state, tree_transform, this.Leaves_pile);
     }
 }
-
-
 class Floor{
     constructor(pos, radius, height) {
         this.pos = vec3(0,1,0);
         this.radius = radius;
         this.height = height;
+        let texture_t = new Texture("../assets/stars.png");
 
         // Load the model file:
-      this.shapes = {
-        // floor: new defs.Cube(),
-        floor: new defs.Regular_2D_Polygon(30,30),
-      };
-    //   {ambient: 0, diffusivity: .8, specularity: 1, color: hex_color("#80FFFF")});
-// 
-      // Non bump mapped:
-      this.floor = new Material(new defs.Textured_Phong(), {
-        color: hex_color("#ffff11"),
-        ambient: 0.5, diffusivity: 0.8, specularity: 1,
-        });
+        this.shapes = {
+            // floor: new defs.Cube(),
+            floor: new defs.Regular_2D_Polygon(20,20),
+        };
+        //   {ambient: 0, diffusivity: .8, specularity: 1, color: hex_color("#80FFFF")});
+    // 
+        // Non bump mapped:
+        this.floor = new Material(new defs.Textured_Phong(), {
+            texture:texture_t, color: hex_color("#11FF00"), 
+            ambient: 0.5, diffusivity: 0.8, specularity: 1,
+            });
     }
 
     draw(context, program_state, t, color, shading, offset) {
@@ -282,21 +586,139 @@ export class JumpGame extends Scene {
         //true when you are on a block, hence stop movement
         this.onBlock=false;
 
-        this.initial_camera_location = Mat4.look_at(vec3(-6*factor, 20*factor, 6*factor), vec3(3, 3, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(-6*factor, 15*factor, 8*factor), vec3(0, 2, 0), vec3(0, 1, 0));
         // this.initial_camera_location = Mat4.look_at(vec3(5, 0, 60), vec3(5, 0, 0), vec3(0, 1, 0));
-
+        this.lastX = 10;
+        this.lastZ = 0;
         // Game initialization
-        this.player = new Player(vec3(0,1,0));
+        this.player = new Player(vec3(0,3,0));
         // this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
-        this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(10,0,0),1.5,1)];
-        this.tree_backgrounds = [
-            new TreeBackground(vec3(1,1,0),3,3),
-        ];
+
+        this.trees = [new Tree(vec3(0,2,0),1,1), new Tree(vec3(this.lastX,2,0),1.5,1)];
+        this.tree_backgrounds = [];
+        this.prepared_trees =[];
+        this.prepared_trunks =[];
+        this.prepared_stumps =[];
+        this.prepared_leaves =[];
+        this.prepared_stones =[];
+        for(let i = 0; i < 30; i++){
+            let treee = new TreeBackground(vec3(0,0,0),1+Math.random(),2+Math.random()*2);
+            this.prepared_trees.push(treee);
+        }
+        for(let i = 0; i < 10; i++){
+            let treee = new TrunkBackground(vec3(0,0,0),1+Math.random(),2+Math.random());
+            this.prepared_trunks.push(treee);
+        }
+        for(let i = 0; i < 10; i++){
+            let treee = new StumpBackground(vec3(0,0,0),0.4+Math.random(),0.5+Math.random()*0.5);
+            this.prepared_stumps.push(treee);
+        }
+        for(let i = 0; i < 10; i++){
+            let treee = new LeafBackground(vec3(0,0,0),0.4+Math.random(),0.25+Math.random()*0.25);
+            this.prepared_leaves.push(treee);
+        }
+        for(let i = 0; i < 10; i++){
+            let treee = new StoneBackground(vec3(0,0,0),0.5+Math.random(),0.5+Math.random());
+            this.prepared_stones.push(treee);
+        }
+
+        this.plant_tree_background(this.lastX,this.trees[0].pos[0],this.trees[0].pos[2],0);
+
         this.floor = new Floor();
         this.set_colors(this.trees.length);
         this.offset = vec3(0,0,0);
         this.light_offset = vec4(0,0,0,0);
+
         this.direction = 0;
+        // next consider looking at planting trees along the road till the next pos, instead of only at the side of last bump
+        // look at the bumps(trees) change the size and model to make them look nicer and have some randomnes
+    }
+    select_type(pos) {
+        let plant_type = Math.random()*8;
+        let selection;
+        for(let i = 0; i < 20; i++){
+            if(plant_type < 4){
+                if(this.prepared_trees.length == 0){
+                    continue;
+                }
+                selection = delete_from_arr(this.prepared_trees,0);
+            }
+            else if(plant_type < 5){
+                if(this.prepared_trunks.length == 0){
+                    continue;
+                }
+                selection = delete_from_arr(this.prepared_trunks,0);
+            }
+            else if(plant_type < 6){
+                if(this.prepared_stumps.length == 0){
+                    continue;
+                }
+                selection = delete_from_arr(this.prepared_stumps,0);
+            }
+            else if(plant_type < 7){
+                if(this.prepared_leaves.length == 0){
+                    continue;
+                }
+                selection = delete_from_arr(this.prepared_leaves,0);
+            } else{
+                if(this.prepared_stones.length == 0){
+                    continue;
+                }
+                selection = delete_from_arr(this.prepared_stones,0);
+            }
+            selection.modify_pos(pos);
+            return selection;
+        }
+        return new TreeBackground(pos,0.5+Math.random(),0.5+Math.random());
+    }
+    plant_tree_background(length,posx,posz,dir){
+        let pos,tree_to_planting,trees2plant_num;
+        trees2plant_num = 2 + Math.random()*length;
+        if(dir == 0 && direction == 1){
+            //plant trees on z-axis
+            for(let i = 0; i < trees2plant_num; i++){
+                if(Math.random() > 0.5){
+                    pos = vec3(posx + length/3 + Math.random()*length, 0, posz + 6 + Math.random()*6);
+                } else{
+                    pos = vec3(posx + Math.random()*(length-length/2), 0, posz - 6 - Math.random()*6);
+                }
+                tree_to_planting = this.select_type(pos);
+                add_to_arr(this.tree_backgrounds,tree_to_planting);
+            }
+        }
+        else if(dir == 1 && direction == 0){
+            for(let i = 0; i < trees2plant_num; i++){
+                if(Math.random() > 0.5){
+                    pos = vec3(posx + 6 + Math.random()*6, 0, posz - Math.random()*(length-length/2));
+                } else{
+                    pos = vec3(posx - 6 - Math.random()*6, 0, posz - length/3 - Math.random()*length);
+                }
+                tree_to_planting = this.select_type(pos);
+                add_to_arr(this.tree_backgrounds,tree_to_planting);
+            }
+        }
+        else if(dir == 0){
+            for(let i = 0; i < trees2plant_num; i++){
+                if(Math.random() > 0.5){
+                    pos = vec3(posx - length/2 + Math.random()*(length+length/2), 0, posz + 6 + Math.random()*6);
+                } else{
+                    pos = vec3(posx - length/2 + Math.random()*(length-length/2), 0, posz -6 - Math.random()*6);
+                }
+                tree_to_planting = this.select_type(pos);
+                add_to_arr(this.tree_backgrounds,tree_to_planting);
+            }
+        } else{
+            //plant trees on x-axis
+            for(let i = 0; i < trees2plant_num; i++){
+                if(Math.random() > 0.5){
+                    pos = vec3(posx + 6 + Math.random()*6, 0, posz + length/2 - Math.random()*(length-length/2));
+                } else{
+                    pos = vec3(posx - 6 - Math.random()*6, 0, posz + length/2 - Math.random()*(length+length/2));
+                }
+                tree_to_planting = this.select_type(pos);
+                add_to_arr(this.tree_backgrounds,tree_to_planting);
+            }
+        }
     }
 
     set_colors(length) {
@@ -326,14 +748,6 @@ export class JumpGame extends Scene {
     
             this.colors[i] = new_color;
         }
-
-        //add new trees as the game progresses
-        // this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1),
-        //     new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
-
-        //x-coordinate of last tree
-        this.lastX=10;
-        this.lastZ=0;
     }
 
     update_tree(){
@@ -354,26 +768,27 @@ export class JumpGame extends Scene {
         }
         if (Math.random() > 0.5){
             this.trees[this.trees.length]=(new Tree(vec3(this.lastX+length,0, this.lastZ),1.5,1));
+            this.plant_tree_background(length,this.lastX,this.lastZ,0);
             this.lastX+=length;
             direction = 0;
         }
         else{
             this.trees[this.trees.length]=(new Tree(vec3(this.lastX,0,this.lastZ-length),1.5,1));
+            this.plant_tree_background(length,this.lastX,this.lastZ,1);
             this.lastZ-=length;
             direction = 1;
         }
-
         //disappear all the trees before the new one you land on
-
         // set the blocks it has jumped after to disappear
-        for (let tree of this.tree_backgrounds) {
-            if (tree.pos[0] + tree.radius < this.player.pos[0]) {
-                tree_pos = vec3(this.lastX-Math.random()*5,0, this.lastZ-Math.random()*5);
-            }
-            if (tree.pos[2] + tree.radius < this.player.pos[2]) {
-                tree_pos = vec3(this.lastX-Math.random()*5,0, this.lastZ-Math.random()*5);
-            }
-        }
+        // let count = 1;
+        // for (let tree of this.tree_backgrounds) {
+        //     if (tree.pos[0] + tree.radius < this.player.pos[0]) {
+        //         tree_pos = vec3(this.lastX-Math.random()*5,0, this.lastZ-Math.random()*5);
+        //     }
+        //     if (tree.pos[2] + tree.radius < this.player.pos[2]) {
+        //         tree_pos = vec3(this.lastX-Math.random()*5,0, this.lastZ-Math.random()*5);
+        //     }
+        // }
 
         for (let tree of this.trees) {
             if (tree.pos[0] == this.player.pos[0] && tree.pos[2] == this.player.pos[2] ) {
@@ -426,13 +841,18 @@ export class JumpGame extends Scene {
             this.shapes.cylinder.draw(context, program_state, tree_transform, this.materials.test);
             tree_transform.pre_multiply(Mat4.translation(5,0,0));
         }*/
+
+        let frustumPlanes = calculateFrustumPlanes(program_state.camera_inverse, program_state.projection_transform);
+
         if (this.player.ifStarted){
             var shading = false;
         }else{
             var shading = true;
         }
         for (let i = 0; i < this.trees.length; i++){
-            this.trees[i].draw(context, program_state, t, this.colors[i], shading);
+            if (isObjectWithinFrustum(this.trees[i], frustumPlanes)) {
+                this.trees[i].draw(context, program_state, t, this.colors[i], shading, tree_pos);
+            }
         }
 
         for (let i = 0; i < this.tree_backgrounds.length; i++){
@@ -456,8 +876,33 @@ export class JumpGame extends Scene {
             return;
         }
 
-
-        //only do this game logic if game isn't over
+        for (let i = 0; i < this.tree_backgrounds.length; i++){
+            if (isObjectWithinFrustum(this.tree_backgrounds[i], frustumPlanes)) {
+                this.tree_backgrounds[i].draw(context, program_state, t, this.colors[i], shading, tree_pos);
+            } else{
+                let class_of = this.tree_backgrounds[i].identify();
+                if(class_of == 0){
+                    let node = delete_from_arr(this.tree_backgrounds,i);
+                    add_to_arr(this.prepared_trees,node);
+                }
+                else if(class_of == 1){
+                    let node = delete_from_arr(this.tree_backgrounds,i);
+                    add_to_arr(this.prepared_trunks,node);
+                }
+                else if(class_of == 2){
+                    let node = delete_from_arr(this.tree_backgrounds,i);
+                    add_to_arr(this.prepared_stumps,node);
+                }
+                else if(class_of == 3){
+                    let node = delete_from_arr(this.tree_backgrounds,i);
+                    add_to_arr(this.prepared_leaves,node);
+                } else{
+                    let node = delete_from_arr(this.tree_backgrounds,i);
+                    add_to_arr(this.prepared_stones,node);
+                }
+            }
+        }
+        this.floor.draw(context, program_state, t, 0, shading, this.offset);
 
         this.player.update();
         //if y coord<=1(height of blocks), then check if above a block, if yes stop, if not keep going
@@ -491,7 +936,7 @@ export class JumpGame extends Scene {
                 this.update_tree();
                 this.offset = vec3(this.player.pos[0], this.player.pos[1]-3, this.player.pos[2]);
                 if (!debug){
-                    program_state.set_camera(Mat4.look_at(vec3(-6*factor+this.player.pos[0], 20*factor+this.player.pos[1], 6*factor+this.player.pos[2]), vec3(3+this.player.pos[0], 3+this.player.pos[1], 0+this.player.pos[2]), vec3(0, 1, 0)));
+                    program_state.set_camera(Mat4.look_at(vec3(-6*factor+this.player.pos[0], 15*factor+this.player.pos[1], 8*factor+this.player.pos[2]), vec3(3+this.player.pos[0], 3+this.player.pos[1], 0+this.player.pos[2]), vec3(0, 1, 0)));
                 }
                 // new_initial_camera_location = Mat4.look_at(vec3(0+this.player.pos[0], 10+this.player.pos[1], 20), vec3(0, 0, 0), vec3(0, 1, 0));
                 //generate new blocks and erase old blocks
