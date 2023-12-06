@@ -6,7 +6,7 @@ const {
 } = tiny;
 
 let debug = 0;
-let factor = 2;
+let factor = 1.5;
 let direction = 0;
 let tree_pos = vec3(0,0,0);
 let TIMESTEP = 0;
@@ -128,7 +128,7 @@ class Player {
         this.vel = vec3(0,0,0);
         this.shape = new Shape_From_File("../assets/objects/light.obj")
         this.material = new Material(new defs.Phong_Shader(),
-            {ambient: 1, diffusivity: .6, color: hex_color("#ffff11")});
+            {ambient: 1, diffusivity: .4, color: hex_color("#ffff11")});
         this.falling = false;
         this.time=0;
         this.squish = 1;
@@ -534,13 +534,13 @@ class Floor{
         // Load the model file:
         this.shapes = {
             // floor: new defs.Cube(),
-            floor: new defs.Regular_2D_Polygon(30,30),
+            floor: new defs.Regular_2D_Polygon(20,20),
         };
         //   {ambient: 0, diffusivity: .8, specularity: 1, color: hex_color("#80FFFF")});
     // 
         // Non bump mapped:
         this.floor = new Material(new defs.Textured_Phong(), {
-            texture:texture_t, color: hex_color("#ffff11"), 
+            texture:texture_t, color: hex_color("#11FF00"), 
             ambient: 0.5, diffusivity: 0.8, specularity: 1,
             });
     }
@@ -578,14 +578,14 @@ export class JumpGame extends Scene {
         //true when you are on a block, hence stop movement
         this.onBlock=false;
 
-        this.initial_camera_location = Mat4.look_at(vec3(-6*factor, 20*factor, 6*factor), vec3(3, 3, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(-6*factor, 15*factor, 8*factor), vec3(0, 2, 0), vec3(0, 1, 0));
         // this.initial_camera_location = Mat4.look_at(vec3(5, 0, 60), vec3(5, 0, 0), vec3(0, 1, 0));
-        this.lastX = 20;
+        this.lastX = 10;
         this.lastZ = 0;
         // Game initialization
-        this.player = new Player(vec3(0,1,0));
+        this.player = new Player(vec3(0,3,0));
         // this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
-        this.trees = [new Tree(vec3(0,0,0),1.5,1), new Tree(vec3(this.lastX,0,0),1.5,1)];
+        this.trees = [new Tree(vec3(0,2,0),1,1), new Tree(vec3(this.lastX,2,0),1.5,1)];
         this.tree_backgrounds = [];
         this.prepared_trees =[];
         this.prepared_trunks =[];
@@ -922,7 +922,7 @@ export class JumpGame extends Scene {
                 this.update_tree();
                 this.offset = vec3(this.player.pos[0], this.player.pos[1]-3, this.player.pos[2]);
                 if (!debug){
-                    program_state.set_camera(Mat4.look_at(vec3(-6*factor+this.player.pos[0], 20*factor+this.player.pos[1], 6*factor+this.player.pos[2]), vec3(3+this.player.pos[0], 3+this.player.pos[1], 0+this.player.pos[2]), vec3(0, 1, 0)));
+                    program_state.set_camera(Mat4.look_at(vec3(-6*factor+this.player.pos[0], 15*factor+this.player.pos[1], 8*factor+this.player.pos[2]), vec3(3+this.player.pos[0], 3+this.player.pos[1], 0+this.player.pos[2]), vec3(0, 1, 0)));
                 }
                 // new_initial_camera_location = Mat4.look_at(vec3(0+this.player.pos[0], 10+this.player.pos[1], 20), vec3(0, 0, 0), vec3(0, 1, 0));
                 //generate new blocks and erase old blocks
