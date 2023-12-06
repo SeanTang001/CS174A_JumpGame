@@ -12,6 +12,8 @@ let tree_pos = vec3(0,0,0);
 let TIMESTEP = 0;
 const GRAVITY_VECTOR = vec3(0,1,0);
 
+let attempts=0;
+
 function calculateFrustumPlanes(viewMatrix, projectionMatrix) {
     let vpMatrix = projectionMatrix.times(viewMatrix);
     let planes = {
@@ -558,11 +560,19 @@ class Floor{
 
 export class JumpGame extends Scene {
     constructor() {
+
+        super();
+
+        this.init_game();
+
+    }
+
+    init_game(){
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
-        super();       
         // Colors
         this.colors = [];
-
+        this.time=0;
+        direction=0;
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
@@ -571,8 +581,6 @@ export class JumpGame extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
             ring: new Material(new defs.Phong_Shader()),
         }
-
-        //true when player does not land on a block
         this.gameOver=false;
 
         //true when you are on a block, hence stop movement
@@ -585,6 +593,7 @@ export class JumpGame extends Scene {
         // Game initialization
         this.player = new Player(vec3(0,3,0));
         // this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
+
         this.trees = [new Tree(vec3(0,2,0),1,1), new Tree(vec3(this.lastX,2,0),1.5,1)];
         this.tree_backgrounds = [];
         this.prepared_trees =[];
@@ -614,11 +623,13 @@ export class JumpGame extends Scene {
         }
 
         this.plant_tree_background(this.lastX,this.trees[0].pos[0],this.trees[0].pos[2],0);
+
         this.floor = new Floor();
         this.set_colors(this.trees.length);
         this.offset = vec3(0,0,0);
         this.light_offset = vec4(0,0,0,0);
 
+        this.direction = 0;
         // next consider looking at planting trees along the road till the next pos, instead of only at the side of last bump
         // look at the bumps(trees) change the size and model to make them look nicer and have some randomnes
     }
@@ -790,12 +801,17 @@ export class JumpGame extends Scene {
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
+        this.key_triggered_button("Welcome to JumpGame. Your objective is to make you avatar jump to blocks", ["i"], () => {});
+
+
         this.key_triggered_button("Jump(distance proportional to duration of key press", ["j"], () => {this.player.jump(false)},
-            "hi", () => this.player.jump(true));
+            '#6E6460', () => this.player.jump(true));
         this.key_triggered_button("Change Color", ["c"], () => {this.set_colors(this.trees.length)});
     }
 
     display(context, program_state) {
+
+
 
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
@@ -808,24 +824,6 @@ export class JumpGame extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
-        // TODO: Create Planets (Requirement 1)
-        // this.shapes.[XXX].draw([XXX]) // <--example
-
-        // TODO: Lighting (Requirement 2)
-
-        // const Light = tiny.Light =
-        // class Light {
-        // // **Light** stores the properties of one light in a scene.  Contains a coordinate and a
-        // // color (each are 4x1 Vectors) as well as one size scalar.
-        // // The coordinate is homogeneous, and so is either a point or a vector.  Use w=0 for a
-        // // vector (directional) light, and w=1 for a point light / spotlight.
-        // // For spotlights, a light also needs a "size" factor for how quickly the brightness
-        // // should attenuate (reduce) as distance from the spotlight increases.
-        // constructor(position, color, size) {
-        // Object.assign(this, {position, color, attenuation: 1 / size});
-        // }
-        // }
-        // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         TIMESTEP = program_state.animation_delta_time / 100;
 
@@ -857,8 +855,24 @@ export class JumpGame extends Scene {
             }
         }
 
+        for (let i = 0; i < this.tree_backgrounds.length; i++){
+            this.tree_backgrounds[i].draw(context, program_state, t, this.colors[i], shading, tree_pos);
+        }
+        this.floor.draw(context, program_state, t, 0, shading, this.offset);
+
         if(this.gameOver) {
             this.player.draw(context, program_state);
+            if(this.time==0){
+                //display gameover Message
+                this.key_triggered_button("GAME JOEVER(will restart in 5 seconds), ATTEMPTS:"+attempts, ["i"], () => {});
+
+                this.time=t;
+            }else{
+                if(t-this.time>5){
+                    attempts++;
+                    this.init_game();
+                }
+            }
             return;
         }
 
@@ -931,6 +945,7 @@ export class JumpGame extends Scene {
         //reset game if this happens
         if(this.player.pos[1]<=0){
             this.gameOver=true;
+
         }
         this.player.draw(context, program_state);
 
