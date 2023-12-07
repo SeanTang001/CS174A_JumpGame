@@ -596,17 +596,6 @@ export class JumpGame extends Scene {
 
         super();
 
-        this.init_game();
-
-    }
-
-    init_game(){
-        // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
-        // Colors
-        this.colors = [];
-        this.time=0;
-        direction=0;
-        // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
@@ -614,22 +603,6 @@ export class JumpGame extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
             ring: new Material(new defs.Phong_Shader()),
         }
-        this.gameOver=false;
-
-        //true when you are on a block, hence stop movement
-        this.onBlock=false;
-
-        this.initial_camera_location = Mat4.look_at(vec3(-6*factor, 15*factor, 8*factor), vec3(0, 2, 0), vec3(0, 1, 0));
-        this.desired_camera_location = this.initial_camera_location;
-        // this.initial_camera_location = Mat4.look_at(vec3(5, 0, 60), vec3(5, 0, 0), vec3(0, 1, 0));
-        this.lastX = 10;
-        this.lastZ = 0;
-        // Game initialization
-        this.player = new Player(vec3(0,3,0));
-        // this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
-
-        this.trees = [new Tree(vec3(0,2,0),1,1), new Tree(vec3(this.lastX,2,0),1.5,1)];
-        this.tree_backgrounds = [];
         this.prepared_trees =[];
         this.prepared_trunks =[];
         this.prepared_stumps =[];
@@ -655,6 +628,35 @@ export class JumpGame extends Scene {
             let treee = new StoneBackground(vec3(0,0,0),0.5+Math.random(),0.5+Math.random());
             this.prepared_stones.push(treee);
         }
+        this.light=new Light(vec4(5,5,5,0), color(1, 1, 1, 0.1), 100);
+        this.init_game();
+
+    }
+
+    init_game(){
+        // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
+        // Colors
+        this.colors = [];
+        this.time=0;
+        direction=0;
+        // *** Materials
+
+        this.gameOver=false;
+
+        //true when you are on a block, hence stop movement
+        this.onBlock=false;
+
+        this.initial_camera_location = Mat4.look_at(vec3(-6*factor, 15*factor, 8*factor), vec3(0, 2, 0), vec3(0, 1, 0));
+        this.desired_camera_location = this.initial_camera_location;
+        // this.initial_camera_location = Mat4.look_at(vec3(5, 0, 60), vec3(5, 0, 0), vec3(0, 1, 0));
+        this.lastX = 10;
+        this.lastZ = 0;
+        // Game initialization
+        this.player = new Player(vec3(0,3,0));
+        // this.trees = [new Tree(vec3(0,0,0),1,1), new Tree(vec3(5,0,0),1.5,1), new Tree(vec3(10,0,0),1.5,1), new Tree(vec3(15,0,0),1.5,1), new Tree(vec3(20,0,0),1,2)];
+
+        this.trees = [new Tree(vec3(0,2,0),1,1), new Tree(vec3(this.lastX,2,0),1.5,1)];
+        this.tree_backgrounds = [];
 
         this.plant_tree_background(this.lastX,this.trees[0].pos[0],this.trees[0].pos[2],0);
 
@@ -865,10 +867,8 @@ export class JumpGame extends Scene {
         // let light_position = vec4(this.offset[0], this.offset[1], this.offset[2], 1);
         // let light_position = Mat4.rotation(t / 300, 1, 0, 0).times(vec4(-1, -1, -1, 1));
 
-        let light_position = vec4(5,5,5,0);
-
         // The parameters of the Light are: position, color, size
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 0.1), 100)];
+        program_state.lights = [this.light];
 
         //this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
         /*let tree_transform = Mat4.rotation(Math.PI/2, 1, 0, 0);
