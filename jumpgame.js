@@ -843,7 +843,6 @@ export class JumpGame extends Scene {
 
         this.key_triggered_button("Jump(distance proportional to duration of key press", ["j"], () => {this.player.jump(false)},
             '#6E6460', () => this.player.jump(true));
-        this.key_triggered_button("Change Color", ["c"], () => {this.set_colors(this.trees.length)});
     }
 
     display(context, program_state) {
