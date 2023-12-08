@@ -949,6 +949,7 @@ export class JumpGame extends Scene {
             let block_x = 0;
             let block_y = 0;
             let block_z;
+            let tree_ref = null;
             for (let tree of this.trees) {
                 //make game easier by not looking at center of mass of block but just the edges
                 if (direction == 0){
@@ -957,6 +958,7 @@ export class JumpGame extends Scene {
                         block_x = tree.pos[0]
                         block_y = tree.pos[1]
                         block_z = tree.pos[2]
+                        tree_ref = tree;
                     }
                 }else{
                     if (tree.pos[2] - 1 <= this.player.pos[2] && tree.pos[2] + 1 >= this.player.pos[2]) {
@@ -964,11 +966,12 @@ export class JumpGame extends Scene {
                         block_x = tree.pos[0]
                         block_y = tree.pos[1]
                         block_z = tree.pos[2]
+                        tree_ref = tree;
                     }
                 }
             }
             if(this.onBlock==true) {
-                this.player.land(block_x, block_y, block_z,1);
+                this.player.land(block_x, block_y, block_z, block_y + tree_ref.height);
                 this.update_tree();
                 this.skybox.update_center(this.player.pos.plus(vec3(0,20,0)));
                 this.offset = vec3(this.player.pos[0], this.player.pos[1]-3, this.player.pos[2]);
